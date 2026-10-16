@@ -40,28 +40,34 @@ jobs:
           echo "=== clang version ==="
           clang --version | head -2 || true
 
-      - name: Clone kernel source (HuTao77 thyme 16.0 / 4.19.325-CIP)
+      - name: Clone kernel source (typezhi/Rinko thyme bloodline tree, 4.19.157)
         run: |
-          git clone -b 16.0 --filter=blob:none \
-            https://github.com/HuTao77-Studio/android_kernel_xiaomi_thyme.git kernel
+          git clone -b thirteen --filter=blob:none \
+            https://github.com/typezhi/Rinko_android_kernel_xiaomi_thyme.git kernel
           cd kernel
           echo "=== HEAD commit ==="
           git log -1 --format="%H %cd %s"
           echo "=== Makefile VERSION ==="
-          head -5 Makefile
+          head -6 Makefile
           echo "=== thyme defconfig 候选 ==="
           ls arch/arm64/configs/ | grep -i thyme || echo "(no thyme-named defconfig)"
-          echo "=== build.config.xiaomi.thyme ==="
-          cat build.config.xiaomi.thyme 2>/dev/null | head -30 || true
-          echo "=== 🔥 cgroup-bpf UAF 崩溃修复链自检（应含 3 条修复）==="
-          git log --format="%h %s" -- kernel/bpf/cgroup.c | grep -iE \
-            "out-of-order|compute_effective_progs|purge_effective_progs" | head -5
-          FOUND=$(git log --format="%s" -- kernel/bpf/cgroup.c | grep -ciE \
-            "out-of-order release|use-after-free Read in compute|kernel BUG in purge")
-          echo "修复链命中数: $FOUND (期望 >=3)"
-          if [ "$FOUND" -lt 3 ]; then
-            echo "!! 修复链不完整 —— 需手动 backport e10360f815ca/4c46091ee985/7d6620f107ba"
-          fi
+          echo "=== cgroup.c 修复前状态 ==="
+          grep -c purge_effective_progs kernel/bpf/cgroup.c || true
+
+      - name: Backport cgroup-bpf UAF crash fix chain (3 patches)
+        run: |
+          cd kernel
+          ls -la ../patches/
+          for p in 85afe91572cf 9369ced0968d abf096ae264f 50ff8807b300; do
+            echo "=== apply $p.patch ==="
+            git apply "../patches/$p.patch" 2>&1 || \
+            patch -p1 --fuzz=5 -N < "../patches/$p.patch" 2>&1 || \
+            echo "!! FAILED: $p"
+          done
+          echo "=== 修复链应用后自检（期望 >=1）==="
+          echo "purge_effective_progs: $(grep -c purge_effective_progs kernel/bpf/cgroup.c || echo 0)"
+          echo "css_get: $(grep -c css_get kernel/bpf/cgroup.c || echo 0)"
+          echo "compute_effective_progs: $(grep -c compute_effective_progs kernel/bpf/cgroup.c || echo 0)"
 
       - name: Download toolchain (proton-clang 20210522)
         run: |
