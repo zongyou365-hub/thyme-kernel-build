@@ -145,12 +145,10 @@ jobs:
             printf '\n/* build shim (4.19): strscpy_pad added in 5.1 */\n#ifndef __KSU_419_STRSCPY_PAD\n#define __KSU_419_STRSCPY_PAD\nstatic inline ssize_t strscpy_pad(char *dest, const char *src, size_t count)\n{\n\tssize_t written;\n\twritten = strscpy(dest, src, count);\n\tif (written < 0 || written == count - 1)\n\t\treturn written;\n\tmemset(dest + written + 1, 0, count - written - 1);\n\treturn written;\n}\n#endif\n' >> include/linux/string.h
             echo ">> shim added: strscpy_pad -> linux/string.h"
           fi
-          # fallthrough pseudo-keyword (added 5.4) -> empty statement
-          # 依据: policy/allowlist.c:499 唯一使用点; typezhi compiler_types.h 无 fallthrough (已实锤)
-          if ! grep -q "define fallthrough" include/linux/compiler_types.h; then
-            printf '\n/* build shim (4.19): fallthrough added in 5.4 */\n#ifndef fallthrough\n#define fallthrough do { } while (0)\n#endif\n' >> include/linux/compiler_types.h
-            echo ">> shim added: fallthrough -> compiler_types.h"
-          fi
+          # !! DO NOT add a global 'fallthrough' macro !!
+          # net/sctp/sm_make_chunk.c uses "goto fallthrough;" + "fallthrough:" as a goto LABEL (AOSP legacy naming;
+          # upstream renamed it when fallthrough became a pseudo-keyword in 5.4). A global #define breaks SCTP (hit in Run#20).
+          # The single C-idiom use (policy/allowlist.c:499) is instead fixed locally via the al419 patch below.
           # 5.8+ nofault family shims (4.19 LTS) —— 仅注入 linux/uaccess.h
           #   strncpy_from_user_nofault -> pagefault_disable + strncpy_from_user
           #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write}
@@ -313,7 +311,22 @@ jobs:
           dXgvcmN1bGlzdC5oPgogI2luY2x1ZGUgPGxpbnV4L211dGV4Lmg+CiAjaW5jbHVkZSA8bGludXgv
           dGFza193b3JrLmg+CisjaW5jbHVkZSA8bGludXgvc2NoZWQvdGFzay5oPgogI2luY2x1ZGUgPGxp
           bnV4L2NhcGFiaWxpdHkuaD4KICNpbmNsdWRlIDxsaW51eC9jb21waWxlci5oPgogI2luY2x1ZGUg
-          PGxpbnV4L2ZzLmg+Cg==' | base64 -d > /tmp/al419.patch
+          PGxpbnV4L2ZzLmg+CkBAIC00OTYsNyArNDk3LDcgQEAKICAgICAgICAgICAgICAgICBwcl9pbmZv
+          KCJtaWdyYXRlZCBkb21haW4gb2YgcHJvZmlsZTogJXNcbiIsIHByb2ZpbGUtPmtleSk7CiAgICAg
+          ICAgICAgICB9CiAgICAgICAgIH0KLSAgICAgICAgZmFsbHRocm91Z2g7CisgICAgICAgIC8qIGZh
+          bGwgdGhyb3VnaCAqLyAgLyogNC4xOTogZmFsbHRocm91Z2ggcHNldWRvLWtleXdvcmQgaXMgbm90
+          IGF2YWlsYWJsZSAoYWRkZWQgNS40KSAqLwogICAgIGNhc2UgMzoKICAgICAgICAgaWYgKHByb2Zp
+          bGUtPmFsbG93X3N1KSB7CiAgICAgICAgICAgICBwcm9maWxlLT5ycF9jb25maWcucHJvZmlsZS5m
+          bGFncyA9IEZMQUdfS1NVX05PX05FV19QUklWUzsK' | base64 -d > /tmp/al419.patch
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9wb2xpY3kvYXBwX3Byb2ZpbGUuYworKysgYi9kcml2ZXJz
+          L2tlcm5lbHN1L3BvbGljeS9hcHBfcHJvZmlsZS5jCkBAIC04OSw3ICs4OSwxMCBAQAogCiAgICAg
+          Y3VycmVudC0+c2VjY29tcC5tb2RlID0gMDsKICAgICBjdXJyZW50LT5zZWNjb21wLmZpbHRlciA9
+          IE5VTEw7CisjaWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtFUk5FTF9WRVJTSU9OKDUsIDksIDAp
+          CisgICAgLyogNC4xOTogc3RydWN0IHNlY2NvbXAgaGFzIG5vIGZpbHRlcl9jb3VudCBtZW1iZXIg
+          KGFkZGVkIDUuOSkgKi8KICAgICBhdG9taWNfc2V0KCZjdXJyZW50LT5zZWNjb21wLmZpbHRlcl9j
+          b3VudCwgMCk7CisjZW5kaWYKICAgICBzcGluX3VubG9ja19pcnEoJmN1cnJlbnQtPnNpZ2hhbmQt
+          PnNpZ2xvY2spOwogCiAjaWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtFUk5FTF9WRVJTSU9OKDYs
+          IDExLCAwKQo=' | base64 -d > /tmp/ap419.patch
           echo "=== apply seccomp_cache patch ==="
           patch -p1 --batch --dry-run < /tmp/sc419.patch && patch -p1 --batch < /tmp/sc419.patch
           echo "=== apply su_mount_ns patch ==="
@@ -322,11 +335,16 @@ jobs:
           patch -p1 --batch --dry-run < /tmp/po419.patch && patch -p1 --batch < /tmp/po419.patch
           echo "=== apply allowlist patch ==="
           patch -p1 --batch --dry-run < /tmp/al419.patch && patch -p1 --batch < /tmp/al419.patch
-          echo "=== verify (expect 1/1/1/1) ==="
+          echo "=== apply app_profile patch ==="
+          patch -p1 --batch --dry-run < /tmp/ap419.patch && patch -p1 --batch < /tmp/ap419.patch
+          echo "=== verify (expect 1/1/1/1/1) ==="
           grep -c "KERNEL_VERSION(5, 9, 0)" drivers/kernelsu/infra/seccomp_cache.c
           grep -c "KERNEL_VERSION(5, 1, 0)" drivers/kernelsu/infra/su_mount_ns.c
           grep -c "ksu_handle_event_419" drivers/kernelsu/manager/pkg_observer.c
           grep -c "sched/task.h" drivers/kernelsu/policy/allowlist.c
+          grep -c "4.19: fallthrough" drivers/kernelsu/policy/allowlist.c
+          echo "=== verify app_profile guard (expect 1) ==="
+          grep -c "no filter_count member" drivers/kernelsu/policy/app_profile.c
 
       - name: Detect defconfig and base config
         id: defc
