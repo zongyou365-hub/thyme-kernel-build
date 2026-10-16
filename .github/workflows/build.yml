@@ -146,6 +146,11 @@ jobs:
             sed -i 's/strncpy_from_user_nofault(/strncpy_from_user(/; s/copy_to_kernel_nofault(/probe_kernel_write(/; s/copy_from_kernel_nofault(/probe_kernel_read(/; s/from_user_nofault(/from_user(/; s/to_user_nofault(/to_user(/' "$f"
             echo "  replaced: $f"
           done
+          # 5.15+ TWA_RESUME -> 4.19 bool notify (true = run before returning to user)
+          grep -rl "TWA_RESUME" drivers/kernelsu/ 2>/dev/null | while IFS= read -r f; do
+            sed -i 's/\bTWA_RESUME\b/true/g' "$f"
+            echo "  TWA_RESUME->true: $f"
+          done
           echo "=== after replace ==="
           grep -rn "nofault" drivers/kernelsu/ || echo "(no more references)"
           echo "=== proactive scan: known 5.8+ APIs ==="
@@ -218,6 +223,54 @@ jobs:
           patch -p1 --batch < /tmp/fw419.patch
           echo "=== verify ==="
           grep -n "KERNEL_VERSION(4, 20, 0)\|KERNEL_VERSION(5, 1, 0)\|KERNEL_VERSION(5, 10, 0)" drivers/kernelsu/infra/file_wrapper.c | head -12
+
+      - name: Patch SukiSU infra for 4.19 (seccomp cache no-op + su_mount_ns fallback)
+        run: |
+          cd kernel
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9pbmZyYS9zZWNjb21wX2NhY2hlLmMKKysrIGIvZHJpdmVy
+          cy9rZXJuZWxzdS9pbmZyYS9zZWNjb21wX2NhY2hlLmMKQEAgLTgsNiArOCw4IEBACiAjaW5jbHVk
+          ZSAia2xvZy5oIiAvLyBJV1lVIHByYWdtYToga2VlcAogI2luY2x1ZGUgImluZnJhL3NlY2NvbXBf
+          Y2FjaGUuaCIKIAorI2lmIExJTlVYX1ZFUlNJT05fQ09ERSA+PSBLRVJORUxfVkVSU0lPTig1LCA5
+          LCAwKQorLyogS2VybmVscyA+PSA1LjkgaW1wbGVtZW50IGFuIGFjdGlvbiBjYWNoZSBpbnNpZGUg
+          c3RydWN0IHNlY2NvbXBfZmlsdGVyLiAqLwogc3RydWN0IGFjdGlvbl9jYWNoZSB7CiAgICAgREVD
+          TEFSRV9CSVRNQVAoYWxsb3dfbmF0aXZlLCBTRUNDT01QX0FSQ0hfTkFUSVZFX05SKTsKICNpZmRl
+          ZiBTRUNDT01QX0FSQ0hfQ09NUEFUCkBAIC02MywzICs2NSwyMiBAQAogICAgIH0KICNlbmRpZgog
+          fQorCisjZWxzZSAvKiBMSU5VWF9WRVJTSU9OX0NPREUgPCA1LjkgKi8KKy8qCisgKiA0LjE5OiBz
+          dHJ1Y3Qgc2VjY29tcF9maWx0ZXIgaGFzIG5vIGFjdGlvbiBjYWNoZS4gVGhlc2UgYXJlIG5vLW9w
+          cyBzbyB0aGF0CisgKiBjYWxsZXJzIChzZXR1aWRfaG9vaykgc3RheSB1bmNoYW5nZWQ7IGFsc28g
+          YXZvaWRzIGNvcnJ1cHRpbmcga2VybmVsIG1lbW9yeSwKKyAqIHdoaWNoIHdvdWxkIGhhcHBlbiBp
+          ZiB3ZSB3cm90ZSB2aWEgdGhlIG5ld2VyIHN0cnVjdCBsYXlvdXQgb24gYW4gb2xkZXIga2VybmVs
+          LgorICovCit2b2lkIGtzdV9zZWNjb21wX2NsZWFyX2NhY2hlKHN0cnVjdCBzZWNjb21wX2ZpbHRl
+          ciAqZmlsdGVyLCBpbnQgbnIpCit7CisgICAgKHZvaWQpZmlsdGVyOworICAgICh2b2lkKW5yOwor
+          fQorCit2b2lkIGtzdV9zZWNjb21wX2FsbG93X2NhY2hlKHN0cnVjdCBzZWNjb21wX2ZpbHRlciAq
+          ZmlsdGVyLCBpbnQgbnIpCit7CisgICAgKHZvaWQpZmlsdGVyOworICAgICh2b2lkKW5yOworfQor
+          I2VuZGlmCg==' | base64 -d > /tmp/sc419.patch
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9pbmZyYS9zdV9tb3VudF9ucy5jCisrKyBiL2RyaXZlcnMv
+          a2VybmVsc3UvaW5mcmEvc3VfbW91bnRfbnMuYwpAQCAtMjEsOCArMjEsMjcgQEAKICNpbmNsdWRl
+          ICJpbmZyYS9zdV9tb3VudF9ucy5oIgogI2luY2x1ZGUgInV0aWwuaCIKIAorI2lmIExJTlVYX1ZF
+          UlNJT05fQ09ERSA+PSBLRVJORUxfVkVSU0lPTig1LCAxLCAwKQogZXh0ZXJuIGludCBwYXRoX21v
+          dW50KGNvbnN0IGNoYXIgKmRldl9uYW1lLCBzdHJ1Y3QgcGF0aCAqcGF0aCwgY29uc3QgY2hhciAq
+          dHlwZV9wYWdlLCB1bnNpZ25lZCBsb25nIGZsYWdzLAogICAgICAgICAgICAgICAgICAgICAgIHZv
+          aWQgKmRhdGFfcGFnZSk7CisjZWxzZQorLyoKKyAqIDQuMTk6IHRoZXJlIGlzIG5vIHBhdGgtYmFz
+          ZWQgbW91bnQgQVBJIChwYXRoX21vdW50KCkgYXJyaXZlZCBpbiA1LjE7IHRoZQorICogbGVnYWN5
+          IGRvX21vdW50KCkgdGFrZXMgYSBfX3VzZXIgcGF0aCBzdHJpbmcgaW5zdGVhZCBvZiBhIHN0cnVj
+          dCBwYXRoKS4KKyAqIERlZ3JhZGUgZ3JhY2VmdWxseTogcmV0dXJuIC1FTk9TWVMsIGNhbGxlcnMg
+          YWxyZWFkeSBsb2cvaGFuZGxlIHRoZSBlcnJvcgorICogKG1vdW50IHByb3BhZ2F0aW9uIHN0YXlz
+          ICJzaGFyZWQiIGluc3RlYWQgb2YgInByaXZhdGUiIGluIElORElWSURVQUwgbW9kZSkuCisgKi8K
+          K3N0YXRpYyBpbmxpbmUgaW50IHBhdGhfbW91bnQoY29uc3QgY2hhciAqZGV2X25hbWUsIHN0cnVj
+          dCBwYXRoICpwYXRoLCBjb25zdCBjaGFyICp0eXBlX3BhZ2UsIHVuc2lnbmVkIGxvbmcgZmxhZ3Ms
+          CisgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHZvaWQgKmRhdGFfcGFnZSkKK3sKKyAgICAo
+          dm9pZClkZXZfbmFtZTsKKyAgICAodm9pZClwYXRoOworICAgICh2b2lkKXR5cGVfcGFnZTsKKyAg
+          ICAodm9pZClmbGFnczsKKyAgICAodm9pZClkYXRhX3BhZ2U7CisgICAgcmV0dXJuIC1FTk9TWVM7
+          Cit9CisjZW5kaWYKIAogI2lmIGRlZmluZWQoX19hYXJjaDY0X18pCiBleHRlcm4gbG9uZyBfX2Fy
+          bTY0X3N5c19zZXRucyhjb25zdCBzdHJ1Y3QgcHRfcmVncyAqcmVncyk7Cg==' | base64 -d > /tmp/sm419.patch
+          echo "=== apply seccomp_cache patch ==="
+          patch -p1 --batch --dry-run < /tmp/sc419.patch && patch -p1 --batch < /tmp/sc419.patch
+          echo "=== apply su_mount_ns patch ==="
+          patch -p1 --batch --dry-run < /tmp/sm419.patch && patch -p1 --batch < /tmp/sm419.patch
+          echo "=== verify (expect 1 and 1) ==="
+          grep -c "KERNEL_VERSION(5, 9, 0)" drivers/kernelsu/infra/seccomp_cache.c
+          grep -c "KERNEL_VERSION(5, 1, 0)" drivers/kernelsu/infra/su_mount_ns.c
 
       - name: Detect defconfig and base config
         id: defc
