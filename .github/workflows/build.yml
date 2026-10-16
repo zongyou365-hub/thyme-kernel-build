@@ -116,7 +116,19 @@ jobs:
             printf '\n/* build shim (4.19 LTS): MODULE_IMPORT_NS added in 5.13 */\n#ifndef MODULE_IMPORT_NS\n#define MODULE_IMPORT_NS(ns)\n#endif\n' >> include/linux/module.h
             echo ">> shim added: MODULE_IMPORT_NS"
           fi
-          grep -A3 "build shim" include/linux/module.h | head -6
+          # linux/pgtable.h (added 5.8) -> forward to asm/pgtable.h
+          if [ ! -f include/linux/pgtable.h ]; then
+            printf '#ifndef _LINUX_PGTABLE_SHIM_H\n#define _LINUX_PGTABLE_SHIM_H\n#include <asm/pgtable.h>\n#endif\n' > include/linux/pgtable.h
+            echo ">> shim added: linux/pgtable.h"
+          fi
+          # linux/minmax.h (added 5.10) -> forward to linux/kernel.h
+          if [ ! -f include/linux/minmax.h ]; then
+            printf '#ifndef _LINUX_MINMAX_SHIM_H\n#define _LINUX_MINMAX_SHIM_H\n#include <linux/kernel.h>\n#endif\n' > include/linux/minmax.h
+            echo ">> shim added: linux/minmax.h"
+          fi
+          echo "=== shims in place ==="
+          ls -la include/linux/pgtable.h include/linux/minmax.h 2>/dev/null || true
+          grep -c "build shim" include/linux/module.h
 
       - name: Detect defconfig and base config
         id: defc
