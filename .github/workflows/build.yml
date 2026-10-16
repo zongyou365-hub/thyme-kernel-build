@@ -126,6 +126,12 @@ jobs:
             printf '#ifndef _LINUX_MINMAX_SHIM_H\n#define _LINUX_MINMAX_SHIM_H\n#include <linux/kernel.h>\n#endif\n' > include/linux/minmax.h
             echo ">> shim added: linux/minmax.h"
           fi
+          # uapi/linux/mount.h (split out of uapi/linux/fs.h in 5.2) -> forward to uapi/linux/fs.h
+          # 依据: su_mount_ns.c:16 唯一引用点, 用到 MS_PRIVATE|MS_REC (4.19 定义于 uapi/linux/fs.h L123/129, 已实锤)
+          if [ ! -f include/uapi/linux/mount.h ]; then
+            printf '#ifndef _UAPI_LINUX_MOUNT_419_SHIM_H\n#define _UAPI_LINUX_MOUNT_419_SHIM_H\n#include <uapi/linux/fs.h>\n#endif\n' > include/uapi/linux/mount.h
+            echo ">> shim added: uapi/linux/mount.h"
+          fi
           # 5.8+ nofault family shims (4.19 LTS) —— 仅注入 linux/uaccess.h
           #   strncpy_from_user_nofault -> pagefault_disable + strncpy_from_user
           #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write}
