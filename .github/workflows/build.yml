@@ -1,0 +1,254 @@
+name: Build thyme kernel (SukiSU + KPM + SUSFS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ksu_branch:
+        description: "SukiSU setup.sh 分支 (susfs-dev=已集成SUSFS+非GKI / susfs-main / main)"
+        default: "susfs-dev"
+        type: string
+      enable_kpm:
+        description: "启用 KPM (CONFIG_KPM=y)"
+        default: "true"
+        type: string
+      build_target:
+        description: "编译目标 (Image.gz-dtb / Image.gz / auto)"
+        default: "auto"
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Maximize build space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --force
+          df -h /
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache clang flex git \
+            libc6-dev libelf-dev libncurses5-dev libncurses-dev \
+            libssl-dev lld llvm zip curl wget unzip \
+            python3 python-is-python3 cpio \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+          echo "=== clang version ==="
+          clang --version | head -2 || true
+
+      - name: Clone kernel source (HuTao77 thyme 16.0 / 4.19.325-CIP)
+        run: |
+          git clone -b 16.0 --filter=blob:none \
+            https://github.com/HuTao77-Studio/android_kernel_xiaomi_thyme.git kernel
+          cd kernel
+          echo "=== HEAD commit ==="
+          git log -1 --format="%H %cd %s"
+          echo "=== Makefile VERSION ==="
+          head -5 Makefile
+          echo "=== thyme defconfig 候选 ==="
+          ls arch/arm64/configs/ | grep -i thyme || echo "(no thyme-named defconfig)"
+          echo "=== build.config.xiaomi.thyme ==="
+          cat build.config.xiaomi.thyme 2>/dev/null | head -30 || true
+          echo "=== 🔥 cgroup-bpf UAF 崩溃修复链自检（应含 3 条修复）==="
+          git log --format="%h %s" -- kernel/bpf/cgroup.c | grep -iE \
+            "out-of-order|compute_effective_progs|purge_effective_progs" | head -5
+          FOUND=$(git log --format="%s" -- kernel/bpf/cgroup.c | grep -ciE \
+            "out-of-order release|use-after-free Read in compute|kernel BUG in purge")
+          echo "修复链命中数: $FOUND (期望 >=3)"
+          if [ "$FOUND" -lt 3 ]; then
+            echo "!! 修复链不完整 —— 需手动 backport e10360f815ca/4c46091ee985/7d6620f107ba"
+          fi
+
+      - name: Download toolchain (proton-clang 20210522)
+        run: |
+          mkdir -p "$HOME/tc"
+          cd "$HOME/tc"
+          wget -qO tc.zip https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
+          unzip -q tc.zip
+          mv proton-clang-20210522 proton-clang
+          export PATH="$HOME/tc/proton-clang/bin:$PATH"
+          clang --version | head -2
+          ld.lld --version | head -1
+
+      - name: Integrate SukiSU (branch = ${{ inputs.ksu_branch }})
+        run: |
+          cd kernel
+          BR="${{ inputs.ksu_branch }}"
+          [ -z "$BR" ] && BR="susfs-dev"
+          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BR"
+          echo "=== drivers/kernelsu 内容 ==="
+          ls drivers/kernelsu/ | head -30
+          echo "=== kernelsu Kconfig 全部 config 项 ==="
+          grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' || true
+          echo "=== KPM 源文件自检 ==="
+          find drivers/kernelsu -iname "*kpm*" | head -10
+          if [ ! -f drivers/kernelsu/Kconfig ] || ! grep -qE "^config KPM" drivers/kernelsu/Kconfig; then
+            echo "!! Kconfig 无 CONFIG_KPM —— 尝试从 SukiSU_KernelPatch_patch 集成"
+            git clone --depth=1 https://github.com/ShirkNeko/SukiSU_KernelPatch_patch.git /tmp/kpp || true
+            if [ -d /tmp/kpp ]; then
+              ls /tmp/kpp
+              find /tmp/kpp -maxdepth 2 -iname "*kpm*" | head -20
+              # 把 kpm 内核代码拷进 kernelsu（按仓库结构自动判断）
+              for d in /tmp/kpp/kernel /tmp/kpp/KPM /tmp/kpm; do
+                if [ -d "$d" ]; then cp -r "$d"/* drivers/kernelsu/ 2>/dev/null || true; break; fi
+              done
+              # 合并 Kconfig 段
+              if [ -f /tmp/kpp/kernel/Kconfig ]; then
+                cat /tmp/kpp/kernel/Kconfig >> drivers/kernelsu/Kconfig || true
+              fi
+              echo "=== 集成后复查 ==="
+              grep -E "^config (KPM|KPM_MODULE)" drivers/kernelsu/Kconfig || echo "(仍无 CONFIG_KPM，看上方 find 输出人工判断)"
+            fi
+          fi
+
+      - name: Detect defconfig and base config
+        id: defc
+        run: |
+          cd kernel
+          DEF=""
+          for cand in thyme_defconfig thyme-user_defconfig thyme-perf_defconfig; do
+            if [ -f "arch/arm64/configs/$cand" ]; then DEF="$cand"; break; fi
+          done
+          if [ -z "$DEF" ]; then
+            DEF=$(ls arch/arm64/configs/ | grep -i thyme | head -1)
+          fi
+          if [ -z "$DEF" ]; then
+            echo "!! 找不到 thyme defconfig，列出 sm8250 相关:" 
+            ls arch/arm64/configs/ | grep -iE "sm8250|vendor" || true
+            exit 1
+          fi
+          echo "defconfig=$DEF" >> "$GITHUB_OUTPUT"
+          echo "使用 defconfig: $DEF"
+          make O=out ARCH=arm64 "$DEF"
+          echo "=== 基线配置关键项 ==="
+          grep -E "CONFIG_(KALLSYMS|LOCALVERSION|MODULE)" out/.config | head -10
+
+      - name: Enable KSU / KPM / SUSFS / KALLSYMS
+        run: |
+          cd kernel
+          SC="./scripts/config --file out/.config"
+          # 1) KALLSYMS（KPM 硬性前提）
+          $SC -e KALLSYMS -e KALLSYMS_ALL
+          # 2) KernelSU 本体
+          $SC -d KSU_MODULE 2>/dev/null || true
+          $SC -e KSU
+          # 3) non-GKI 手动钩子（4.19 必需；若无此项则忽略）
+          grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK in Kconfig)"
+          # 4) KPM（可选输入）
+          if [ "${{ inputs.enable_kpm }}" = "true" ]; then
+            grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM || echo "(no CONFIG_KPM in Kconfig -- KPM 需确认集成方式)"
+          fi
+          # 5) SUSFS（susfs-main 分支才有）
+          for opt in KSU_SUSFS SUSFS; do
+            grep -qE "^config $opt" drivers/kernelsu/Kconfig && $SC -e "$opt" && echo "enabled $opt" || true
+          done
+          # SUSFS 子项全开
+          for opt in $(grep -oE "^config KSU_SUSFS_[A-Z_0-9]+" drivers/kernelsu/Kconfig | awk '{print $2}'); do
+            $SC -e "$opt" && echo "enabled $opt" || true
+          done
+          # 6) LOCALVERSION 标记
+          $SC --set-str LOCALVERSION "-thyme-SukiSU-KPM"
+          make O=out ARCH=arm64 olddefconfig
+          echo "=== 最终配置核验 ==="
+          grep -E "CONFIG_(KSU|KPM|KALLSYMS|SUSFS|KSU_MANUAL_HOOK|LOCALVERSION)[=_]" out/.config | grep -v "^#" || true
+
+      - name: Build kernel
+        id: build
+        run: |
+          cd kernel
+          export PATH="$HOME/tc/proton-clang/bin:$PATH"
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+          export CC=clang LD=ld.lld
+          export AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip
+          export KBUILD_BUILD_VERSION=1
+          export KBUILD_BUILD_USER=builder
+          export KBUILD_BUILD_HOST=builder
+          TARGET="${{ inputs.build_target }}"
+          [ -z "$TARGET" ] && TARGET="auto"
+          set -o pipefail
+          build_one() {
+            make O=out ARCH=arm64 CC=clang LD=ld.lld \
+              AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
+              CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+              -j"$(nproc)" "$1" 2>&1 | tail -80
+          }
+          if [ "$TARGET" = "auto" ] || [ "$TARGET" = "Image.gz-dtb" ]; then
+            echo "### 尝试 Image.gz-dtb ###"
+            if build_one "Image.gz-dtb"; then
+              echo "target=Image.gz-dtb" >> "$GITHUB_OUTPUT"
+            else
+              echo "### Image.gz-dtb 失败，退回 Image.gz ###"
+              build_one "Image.gz" && echo "target=Image.gz" >> "$GITHUB_OUTPUT" || exit 1
+            fi
+          else
+            build_one "$TARGET" && echo "target=$TARGET" >> "$GITHUB_OUTPUT" || exit 1
+          fi
+          echo "=== 产物 ==="
+          ls -la out/arch/arm64/boot/
+          echo "=== 内核版本串 ==="
+          strings out/arch/arm64/boot/Image* | grep -m1 "Linux version" || true
+          echo "=== KPM 符号自检（>0 = KPM 已编入）==="
+          for IMG in out/arch/arm64/boot/Image*; do
+            if [ -f "$IMG" ]; then
+              KC=$(strings "$IMG" | grep -c "sukisu_kpm" || true)
+              KP=$(strings "$IMG" | grep -c "KernelPatch" || true)
+              echo "$IMG: sukisu_kpm=$KC KernelPatch=$KP"
+            fi
+          done
+          echo "=== SUSFS 符号自检 ==="
+          for IMG in out/arch/arm64/boot/Image*; do
+            if [ -f "$IMG" ]; then
+              SC=$(strings "$IMG" | grep -c "susfs" || true)
+              echo "$IMG: susfs=$SC"
+            fi
+          done
+
+      - name: Package AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ak3
+          rm -rf ak3/.git ak3/.github ak3/README.md ak3/anykernel.sh.bak
+          T="${{ steps.build.outputs.target }}"
+          if [ "$T" = "Image.gz-dtb" ] && [ -f kernel/out/arch/arm64/boot/Image.gz-dtb ]; then
+            cp kernel/out/arch/arm64/boot/Image.gz-dtb ak3/Image.gz-dtb
+            sed -i 's/^BLOCK.*=.*$/BLOCK = auto;/; s|^#.*Image.gz-dtb.*|Image.gz-dtb|' ak3/anykernel.sh || true
+          else
+            cp kernel/out/arch/arm64/boot/Image.gz ak3/Image.gz
+            # dtb 单独打包（若生成）
+            if [ -d kernel/out/arch/arm64/boot/dts/qcom ]; then
+              find kernel/out/arch/arm64/boot/dts/qcom -name "*.dtb" -exec cp {} ak3/dtb/ \; 2>/dev/null || true
+            fi
+          fi
+          cd ak3
+          zip -r9 "../AnyKernel3-thyme-SukiSU-KPM-SUSFS.zip" .
+          cd ..
+          ls -la AnyKernel3-*.zip
+
+      - name: Also upload raw Image
+        run: |
+          T="${{ steps.build.outputs.target }}"
+          cp "kernel/out/arch/arm64/boot/$T" "./thyme-kernel-${T}-SukiSU-KPM.img" 2>/dev/null || \
+            cp kernel/out/arch/arm64/boot/Image "./thyme-kernel-Image-SukiSU-KPM.img"
+          ls -la thyme-kernel-*.img || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: thyme-kernel-SukiSU-KPM-SUSFS
+          path: |
+            AnyKernel3-*.zip
+            thyme-kernel-*.img
+          if-no-files-found: error
+
+      - name: Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            AnyKernel3-*.zip
+            thyme-kernel-*.img
