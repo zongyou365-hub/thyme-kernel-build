@@ -138,6 +138,20 @@ jobs:
           # 0) Android vendor hooks（drivers/android/vendor_hooks.o 依赖；树引用 android_vh_* 符号）
           $SC -e ANDROID_VENDOR_HOOKS
           $SC -e TRACEPOINTS
+          # 0.5) 对齐"可启动基准"（M13/OurSky 共有、defconfig 缺失的 36 项）
+          #    关键: XDP_SOCKETS (tethering netbpfload), WIREGUARD, CRYPTO 系列, F2FS 压缩等
+          for opt in XDP_SOCKETS WIREGUARD BOARD_XIAOMI CFS_BANDWIDTH FB XLOGCHAR \
+                     CRYPTO_842 CRYPTO_LZ4 CRYPTO_LZ4HC CRYPTO_LZO CRYPTO_ZSTD \
+                     F2FS_FS_COMPRESSION \
+                     PSTORE_COMPRESS PSTORE_DEFLATE_COMPRESS PSTORE_DEFLATE_COMPRESS_DEFAULT \
+                     CNSS_QCA6390 \
+                     CAN_8DEV_USB CAN_EMS_USB CAN_ESD_USB2 CAN_GS_USB CAN_KVASER_USB \
+                     CAN_MCBA_USB CAN_SLCAN CAN_UCAN CAN_VCAN CAN_VXCAN \
+                     USB_SERIAL_CH341 USB_SERIAL_OTI6858 USB_SERIAL_PL2303 \
+                     USB_SERIAL_QT2 USB_SERIAL_SPCP8X5 USB_SERIAL_TI USB_SERIAL_UPD78F0730; do
+            $SC -e "$opt" 2>/dev/null || true
+          done
+          $SC --set-str PSTORE_COMPRESS_DEFAULT "deflate" 2>/dev/null || true
           # 1) KALLSYMS（KPM 硬性前提）
           $SC -e KALLSYMS -e KALLSYMS_ALL
           # 2) KernelSU 本体
