@@ -108,6 +108,22 @@ jobs:
           echo "=== KPM 源文件自检 ==="
           find drivers/kernelsu -iname "*kpm*" | head -10
 
+      - name: Pre-build compat shims (4.19 LTS mode)
+        run: |
+          cd kernel
+          # MODULE_IMPORT_NS (added in Linux 5.13) missing on 4.19 -> empty shim
+          if ! grep -q "define MODULE_IMPORT_NS" include/linux/module.h; then
+            cat >> include/linux/module.h <<'EOF'
+
+/* --- build shim (4.19 LTS): MODULE_IMPORT_NS added in 5.13 --- */
+#ifndef MODULE_IMPORT_NS
+#define MODULE_IMPORT_NS(ns)
+#endif
+EOF
+            echo ">> shim added: MODULE_IMPORT_NS"
+          fi
+          grep -A3 "build shim" include/linux/module.h | head -6
+
       - name: Detect defconfig and base config
         id: defc
         run: |
