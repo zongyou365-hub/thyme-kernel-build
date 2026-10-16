@@ -157,6 +157,68 @@ jobs:
           ls -la include/linux/pgtable.h include/linux/minmax.h 2>/dev/null || true
           grep -c "build shim" include/linux/module.h
 
+      - name: Patch file_wrapper.c for 4.19 (iopoll/remap/anon-sec/selinux compat)
+        run: |
+          cd kernel
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9pbmZyYS9maWxlX3dyYXBwZXIuYworKysgYi9kcml2ZXJz
+          L2tlcm5lbHN1L2luZnJhL2ZpbGVfd3JhcHBlci5jCkBAIC0yMCw2ICsyMCwxMiBAQAogCiAjaW5j
+          bHVkZSAiaW5mcmEvZmlsZV93cmFwcGVyLmgiCiAKKyNpZiBMSU5VWF9WRVJTSU9OX0NPREUgPCBL
+          RVJORUxfVkVSU0lPTig1LCAxMCwgMCkKKy8qIDQuMTkgY29tcGF0OiBzZWN1cml0eV9pbm9kZV9p
+          bml0X3NlY3VyaXR5X2Fub24oKSBhZGRlZCBpbiA1LjEwOyBzZWxpbnV4X2lub2RlKCkgcmVuYW1l
+          ZCBpbiA1LjEwICh3YXM6IGlub2RlLT5pX3NlY3VyaXR5KSAqLworI2RlZmluZSBzZWN1cml0eV9p
+          bm9kZV9pbml0X3NlY3VyaXR5X2Fub24oaW5vZGUsIHFuYW1lLCBjdHgpICgodm9pZCkoaW5vZGUp
+          LCAodm9pZCkocW5hbWUpLCAodm9pZCkoY3R4KSwgMCkKKyNkZWZpbmUgc2VsaW51eF9pbm9kZShp
+          bm9kZSkgKChzdHJ1Y3QgaW5vZGVfc2VjdXJpdHlfc3RydWN0ICopKChpbm9kZSktPmlfc2VjdXJp
+          dHkpKQorI2VuZGlmCisKIHN0cnVjdCBrc3VfZmlsZV93cmFwcGVyIHsKICAgICBzdHJ1Y3QgZmls
+          ZSAqb3JpZzsKICAgICBzdHJ1Y3QgZmlsZV9vcGVyYXRpb25zIG9wczsKQEAgLTkyLDcgKzk4LDcg
+          QEAKICAgICBraW9jYi0+a2lfZmlscCA9IG9yaWc7CiAgICAgcmV0dXJuIG9yaWctPmZfb3AtPmlv
+          cG9sbChraW9jYiwgaWNiLCB2KTsKIH0KLSNlbHNlCisjZWxpZiBMSU5VWF9WRVJTSU9OX0NPREUg
+          Pj0gS0VSTkVMX1ZFUlNJT04oNSwgMSwgMCkKIHN0YXRpYyBpbnQga3N1X3dyYXBwZXJfaW9wb2xs
+          KHN0cnVjdCBraW9jYiAqa2lvY2IsIGJvb2wgc3BpbikKIHsKICAgICBzdHJ1Y3Qga3N1X2ZpbGVf
+          d3JhcHBlciAqZGF0YSA9IGtpb2NiLT5raV9maWxwLT5wcml2YXRlX2RhdGE7CkBAIC0zMDcsNiAr
+          MzEzLDcgQEAKIC8vIGh0dHBzOi8vY3MuYW5kcm9pZC5jb20vYW5kcm9pZC9rZXJuZWwvc3VwZXJw
+          cm9qZWN0LysvY29tbW9uLWFuZHJvaWQtbWFpbmxpbmU6Y29tbW9uL2ZzL3JlbWFwX3JhbmdlLmM7
+          bD00MDMtNDA0O2RyYz0zOThkYTdkZWZlMjE4ZDNlNTFiMGYzYmRmZjc1MTQ3ZTI4MTI1YjYwCiAv
+          LyBSRU1BUF9GSUxFX0RFRFVQOiB1c2UgZmlsZV9vdXQKIC8vIGh0dHBzOi8vY3MuYW5kcm9pZC5j
+          b20vYW5kcm9pZC9rZXJuZWwvc3VwZXJwcm9qZWN0LysvY29tbW9uLWFuZHJvaWQtbWFpbmxpbmU6
+          Y29tbW9uL2ZzL3JlbWFwX3JhbmdlLmM7bD00ODMtNDg0O2RyYz0zOThkYTdkZWZlMjE4ZDNlNTFi
+          MGYzYmRmZjc1MTQ3ZTI4MTI1YjYwCisjaWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtFUk5FTF9W
+          RVJTSU9OKDQsIDIwLCAwKQogc3RhdGljIGxvZmZfdCBrc3Vfd3JhcHBlcl9yZW1hcF9maWxlX3Jh
+          bmdlKHN0cnVjdCBmaWxlICpmaWxlX2luLCBsb2ZmX3QgcG9zX2luLCBzdHJ1Y3QgZmlsZSAqZmls
+          ZV9vdXQsIGxvZmZfdCBwb3Nfb3V0LAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+          ICAgICAgICAgIGxvZmZfdCBsZW4sIHVuc2lnbmVkIGludCByZW1hcF9mbGFncykKIHsKQEAgLTMy
+          MSw2ICszMjgsNyBAQAogICAgIH0KIH0KIAorI2VuZGlmIC8qIHJlbWFwX2ZpbGVfcmFuZ2UgYWRk
+          ZWQgaW4gNC4yMCAqLwogc3RhdGljIGludCBrc3Vfd3JhcHBlcl9mYWR2aXNlKHN0cnVjdCBmaWxl
+          ICpmcCwgbG9mZl90IG9mZjEsIGxvZmZfdCBvZmYyLCBpbnQgZmxhZ3MpCiB7CiAgICAgc3RydWN0
+          IGtzdV9maWxlX3dyYXBwZXIgKmRhdGEgPSBmcC0+cHJpdmF0ZV9kYXRhOwpAQCAtMzYwLDcgKzM2
+          OCw5IEBACiAgICAgcC0+b3BzLndyaXRlID0gZnAtPmZfb3AtPndyaXRlID8ga3N1X3dyYXBwZXJf
+          d3JpdGUgOiBOVUxMOwogICAgIHAtPm9wcy5yZWFkX2l0ZXIgPSBmcC0+Zl9vcC0+cmVhZF9pdGVy
+          ID8ga3N1X3dyYXBwZXJfcmVhZF9pdGVyIDogTlVMTDsKICAgICBwLT5vcHMud3JpdGVfaXRlciA9
+          IGZwLT5mX29wLT53cml0ZV9pdGVyID8ga3N1X3dyYXBwZXJfd3JpdGVfaXRlciA6IE5VTEw7Cisj
+          aWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtFUk5FTF9WRVJTSU9OKDUsIDEsIDApCiAgICAgcC0+
+          b3BzLmlvcG9sbCA9IGZwLT5mX29wLT5pb3BvbGwgPyBrc3Vfd3JhcHBlcl9pb3BvbGwgOiBOVUxM
+          OworI2VuZGlmCiAjaWYgTElOVVhfVkVSU0lPTl9DT0RFIDwgS0VSTkVMX1ZFUlNJT04oNiwgNiwg
+          MCkKICAgICBwLT5vcHMuaXRlcmF0ZSA9IGZwLT5mX29wLT5pdGVyYXRlID8ga3N1X3dyYXBwZXJf
+          aXRlcmF0ZSA6IE5VTEw7CiAjZW5kaWYKQEAgLTM5MSw3ICs0MDEsOSBAQAogICAgIHAtPm9wcy5m
+          YWxsb2NhdGUgPSBmcC0+Zl9vcC0+ZmFsbG9jYXRlID8ga3N1X3dyYXBwZXJfZmFsbG9jYXRlIDog
+          TlVMTDsKICAgICBwLT5vcHMuc2hvd19mZGluZm8gPSBmcC0+Zl9vcC0+c2hvd19mZGluZm8gPyBr
+          c3Vfd3JhcHBlcl9zaG93X2ZkaW5mbyA6IE5VTEw7CiAgICAgcC0+b3BzLmNvcHlfZmlsZV9yYW5n
+          ZSA9IGZwLT5mX29wLT5jb3B5X2ZpbGVfcmFuZ2UgPyBrc3Vfd3JhcHBlcl9jb3B5X2ZpbGVfcmFu
+          Z2UgOiBOVUxMOworI2lmIExJTlVYX1ZFUlNJT05fQ09ERSA+PSBLRVJORUxfVkVSU0lPTig0LCAy
+          MCwgMCkKICAgICBwLT5vcHMucmVtYXBfZmlsZV9yYW5nZSA9IGZwLT5mX29wLT5yZW1hcF9maWxl
+          X3JhbmdlID8ga3N1X3dyYXBwZXJfcmVtYXBfZmlsZV9yYW5nZSA6IE5VTEw7CisjZW5kaWYKICAg
+          ICBwLT5vcHMuZmFkdmlzZSA9IGZwLT5mX29wLT5mYWR2aXNlID8ga3N1X3dyYXBwZXJfZmFkdmlz
+          ZSA6IE5VTEw7CiAKICNpZiBMSU5VWF9WRVJTSU9OX0NPREUgPj0gS0VSTkVMX1ZFUlNJT04oNiwg
+          NiwgMCkK' | base64 -d > /tmp/fw419.patch
+          echo "=== patch preview ==="
+          head -6 /tmp/fw419.patch
+          echo "=== dry-run ==="
+          patch -p1 --batch --dry-run < /tmp/fw419.patch
+          echo "=== apply ==="
+          patch -p1 --batch < /tmp/fw419.patch
+          echo "=== verify ==="
+          grep -n "KERNEL_VERSION(4, 20, 0)\|KERNEL_VERSION(5, 1, 0)\|KERNEL_VERSION(5, 10, 0)" drivers/kernelsu/infra/file_wrapper.c | head -12
+
       - name: Detect defconfig and base config
         id: defc
         run: |
