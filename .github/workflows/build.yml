@@ -113,13 +113,7 @@ jobs:
           cd kernel
           # MODULE_IMPORT_NS (added in Linux 5.13) missing on 4.19 -> empty shim
           if ! grep -q "define MODULE_IMPORT_NS" include/linux/module.h; then
-            cat >> include/linux/module.h <<'EOF'
-
-/* --- build shim (4.19 LTS): MODULE_IMPORT_NS added in 5.13 --- */
-#ifndef MODULE_IMPORT_NS
-#define MODULE_IMPORT_NS(ns)
-#endif
-EOF
+            printf '\n/* build shim (4.19 LTS): MODULE_IMPORT_NS added in 5.13 */\n#ifndef MODULE_IMPORT_NS\n#define MODULE_IMPORT_NS(ns)\n#endif\n' >> include/linux/module.h
             echo ">> shim added: MODULE_IMPORT_NS"
           fi
           grep -A3 "build shim" include/linux/module.h | head -6
