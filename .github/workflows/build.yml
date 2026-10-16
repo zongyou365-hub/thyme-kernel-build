@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       ksu_branch:
-        description: "SukiSU setup.sh 分支 (susfs-dev=已集成SUSFS+非GKI / susfs-main / main)"
-        default: "susfs-dev"
+        description: "SukiSU setup.sh 分支 (susfs_new=官方SUSFS集成 / main / dev)"
+        default: "susfs_new"
         type: string
       enable_kpm:
         description: "启用 KPM (CONFIG_KPM=y)"
@@ -78,32 +78,25 @@ jobs:
         run: |
           cd kernel
           BR="${{ inputs.ksu_branch }}"
-          [ -z "$BR" ] && BR="susfs-dev"
+          [ -z "$BR" ] && BR="susfs_new"
           curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BR"
           echo "=== drivers/kernelsu 内容 ==="
           ls drivers/kernelsu/ | head -30
           echo "=== kernelsu Kconfig 全部 config 项 ==="
           grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' || true
+          echo "=== KPM/SUSFS/MANUAL_HOOK 存在性检查 ==="
+          for opt in KPM KSU_MANUAL_HOOK KSU_SUSFS; do
+            grep -qE "^config $opt" drivers/kernelsu/Kconfig && echo "Kconfig 有 $opt" || echo "Kconfig 无 $opt"
+          done
+          echo "=== Makefile 健康检查（防 CFLAGS 污染）==="
+          if grep -qE "^(CFLAGS|AFLAGS)[[:space:]]*[:+]?=" drivers/kernelsu/Makefile; then
+            echo "!! 检测到 CFLAGS 用法，自动替换为 ccflags-y"
+            sed -i 's/^CFLAGS[[:space:]]*:=/ccflags-y :=/; s/^CFLAGS[[:space:]]*+=/ccflags-y +=/; s/^AFLAGS[[:space:]]*:=/asflags-y :=/; s/^AFLAGS[[:space:]]*+=/asflags-y +=/' drivers/kernelsu/Makefile
+          else
+            echo "Makefile 干净"
+          fi
           echo "=== KPM 源文件自检 ==="
           find drivers/kernelsu -iname "*kpm*" | head -10
-          if [ ! -f drivers/kernelsu/Kconfig ] || ! grep -qE "^config KPM" drivers/kernelsu/Kconfig; then
-            echo "!! Kconfig 无 CONFIG_KPM —— 尝试从 SukiSU_KernelPatch_patch 集成"
-            git clone --depth=1 https://github.com/ShirkNeko/SukiSU_KernelPatch_patch.git /tmp/kpp || true
-            if [ -d /tmp/kpp ]; then
-              ls /tmp/kpp
-              find /tmp/kpp -maxdepth 2 -iname "*kpm*" | head -20
-              # 把 kpm 内核代码拷进 kernelsu（按仓库结构自动判断）
-              for d in /tmp/kpp/kernel /tmp/kpp/KPM /tmp/kpm; do
-                if [ -d "$d" ]; then cp -r "$d"/* drivers/kernelsu/ 2>/dev/null || true; break; fi
-              done
-              # 合并 Kconfig 段
-              if [ -f /tmp/kpp/kernel/Kconfig ]; then
-                cat /tmp/kpp/kernel/Kconfig >> drivers/kernelsu/Kconfig || true
-              fi
-              echo "=== 集成后复查 ==="
-              grep -E "^config (KPM|KPM_MODULE)" drivers/kernelsu/Kconfig || echo "(仍无 CONFIG_KPM，看上方 find 输出人工判断)"
-            fi
-          fi
 
       - name: Detect defconfig and base config
         id: defc
