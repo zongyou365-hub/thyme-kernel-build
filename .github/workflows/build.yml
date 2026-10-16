@@ -74,6 +74,17 @@ jobs:
           clang --version | head -2
           ld.lld --version | head -1
 
+      - name: Patch vendor hooks build (HuTao77 tree omits vendor_hooks.o)
+        run: |
+          cd kernel
+          echo "=== vendor_hooks.c 存在性 ==="
+          ls -la drivers/android/vendor_hooks.c 2>/dev/null || echo "(no vendor_hooks.c)"
+          if [ -f drivers/android/vendor_hooks.c ] && ! grep -q "vendor_hooks" drivers/android/Makefile; then
+            echo "obj-y += vendor_hooks.o" >> drivers/android/Makefile
+            echo ">> patched: obj-y += vendor_hooks.o appended to drivers/android/Makefile"
+          fi
+          tail -5 drivers/android/Makefile
+
       - name: Integrate SukiSU (branch = ${{ inputs.ksu_branch }})
         run: |
           cd kernel
