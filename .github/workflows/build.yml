@@ -362,10 +362,22 @@ jobs:
           [ -z "$TARGET" ] && TARGET="auto"
           set -o pipefail
           build_one() {
+            TGT="$1"
             make O=out ARCH=arm64 CC=clang LD=ld.lld \
               AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
               CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-              -j"$(nproc)" "$1" 2>&1 | tail -80
+              -j"$(nproc)" "$TGT" > "build_full_${TGT}.log" 2>&1
+            RC=$?
+            echo "=== make $TGT exit=$RC ==="
+            if [ $RC -ne 0 ]; then
+              echo "=== ERRORS (grep) ==="
+              grep -nE "error:|fatal:|undefined reference|Error [0-9]+|No rule to make target|ld\.lld:" "build_full_${TGT}.log" | tail -60 || true
+              echo "=== last compiled objects ==="
+              grep -E "^  (CC|LD|AR|GEN|OBJCOPY|WRAP) " "build_full_${TGT}.log" | tail -20 || true
+              echo "=== tail -40 raw ==="
+              tail -40 "build_full_${TGT}.log" || true
+            fi
+            return $RC
           }
           if [ "$TARGET" = "auto" ] || [ "$TARGET" = "Image.gz-dtb" ]; then
             echo "### 尝试 Image.gz-dtb ###"
@@ -433,6 +445,14 @@ jobs:
             AnyKernel3-*.zip
             thyme-kernel-*.img
           if-no-files-found: error
+
+      - name: Upload full build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-failure
+          path: kernel/build_full_*.log
+          if-no-files-found: ignore
 
       - name: Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
