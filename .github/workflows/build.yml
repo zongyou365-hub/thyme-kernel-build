@@ -158,10 +158,9 @@ jobs:
           $SC -e KSU
           # 3) non-GKI 手动钩子（4.19 必需；若无此项则忽略）
           grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK in Kconfig)"
-          # 4) KPM（可选输入）
-          if [ "${{ inputs.enable_kpm }}" = "true" ]; then
-            grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM || echo "(no CONFIG_KPM in Kconfig -- KPM 需确认集成方式)"
-          fi
+          # 4) KPM 源码编译禁用（改用管理器 kpimg 二进制修补路线，规避源码兼容性）
+          $SC -d KPM 2>/dev/null || true
+          echo "KPM source build disabled (manager kpimg binary patch path used instead)"
           # 5) SUSFS（susfs-main 分支才有）
           for opt in KSU_SUSFS SUSFS; do
             grep -qE "^config $opt" drivers/kernelsu/Kconfig && $SC -e "$opt" && echo "enabled $opt" || true
