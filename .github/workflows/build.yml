@@ -54,20 +54,13 @@ jobs:
           echo "=== cgroup.c 修复前状态 ==="
           grep -c purge_effective_progs kernel/bpf/cgroup.c || true
 
-      - name: Backport cgroup-bpf UAF crash fix chain (3 patches)
+      - name: Backport note (SKIPPED - arch mismatch)
         run: |
-          cd kernel
-          ls -la ../patches/
-          for p in 85afe91572cf 9369ced0968d abf096ae264f 50ff8807b300; do
-            echo "=== apply $p.patch ==="
-            git apply "../patches/$p.patch" 2>&1 || \
-            patch -p1 --fuzz=5 -N < "../patches/$p.patch" 2>&1 || \
-            echo "!! FAILED: $p"
-          done
-          echo "=== 修复链应用后自检（期望 >=1）==="
-          echo "purge_effective_progs: $(grep -c purge_effective_progs kernel/bpf/cgroup.c || echo 0)"
-          echo "css_get: $(grep -c css_get kernel/bpf/cgroup.c || echo 0)"
-          echo "compute_effective_progs: $(grep -c compute_effective_progs kernel/bpf/cgroup.c || echo 0)"
+          echo "cgroup-bpf UAF fix chain NOT applied:"
+          echo "- 85afe915/50ff8807 target the 2020 'decouple' cgroup_bpf arch (missing in 4.19.157)"
+          echo "- 9369ced0/abf096ae target bpf_cgroup_link (missing in 4.19.157)"
+          echo "- 157 uses synchronous hierarchical release: the out-of-order UAF path does not exist"
+          echo "- 该树为血统树（OurSky 同代生态），直接采用原版 cgroup.c"
 
       - name: Download toolchain (proton-clang 20210522)
         run: |
