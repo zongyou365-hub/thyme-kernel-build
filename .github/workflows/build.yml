@@ -132,6 +132,13 @@ jobs:
             printf '#ifndef _UAPI_LINUX_MOUNT_419_SHIM_H\n#define _UAPI_LINUX_MOUNT_419_SHIM_H\n#include <uapi/linux/fs.h>\n#endif\n' > include/uapi/linux/mount.h
             echo ">> shim added: uapi/linux/mount.h"
           fi
+          # selinux_cred helper (mainline 5.5+; native 4.19 objsec.h lacks it) -> cred->security
+          # 依据: SukiSU selinux.c:35/164/166 调用 selinux_cred(cred); torvalds v4.19 objsec.h 对照实锤无此 helper;
+          #       current_security() 是 cred.h L377 宏, 已确认无问题
+          if [ -f security/selinux/include/objsec.h ] && ! grep -q "selinux_cred" security/selinux/include/objsec.h; then
+            sed -i 's|#endif /\* _SELINUX_OBJSEC_H_ \*/|static inline struct task_security_struct *selinux_cred(const struct cred *cred)\n{ return cred->security; }\n#endif /* _SELINUX_OBJSEC_H_ */|' security/selinux/include/objsec.h
+            echo ">> shim added: selinux_cred -> objsec.h"
+          fi
           # 5.8+ nofault family shims (4.19 LTS) —— 仅注入 linux/uaccess.h
           #   strncpy_from_user_nofault -> pagefault_disable + strncpy_from_user
           #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write}
@@ -270,13 +277,35 @@ jobs:
           ICAodm9pZClmbGFnczsKKyAgICAodm9pZClkYXRhX3BhZ2U7CisgICAgcmV0dXJuIC1FTk9TWVM7
           Cit9CisjZW5kaWYKIAogI2lmIGRlZmluZWQoX19hYXJjaDY0X18pCiBleHRlcm4gbG9uZyBfX2Fy
           bTY0X3N5c19zZXRucyhjb25zdCBzdHJ1Y3QgcHRfcmVncyAqcmVncyk7Cg==' | base64 -d > /tmp/sm419.patch
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9tYW5hZ2VyL3BrZ19vYnNlcnZlci5jCisrKyBiL2RyaXZl
+          cnMva2VybmVsc3UvbWFuYWdlci9wa2dfb2JzZXJ2ZXIuYwpAQCAtMzUsOCArMzUsMjggQEAKICAg
+          ICByZXR1cm4gMDsKIH0KIAorI2lmIExJTlVYX1ZFUlNJT05fQ09ERSA8IEtFUk5FTF9WRVJTSU9O
+          KDUsIDksIDApCisvKiBidWlsZCBzaGltICg0LjE5KTogZnNub3RpZnlfb3BzIGhhcyBubyBoYW5k
+          bGVfaW5vZGVfZXZlbnQgYmVmb3JlIDUuOSAqLworc3RhdGljIGludCBrc3VfaGFuZGxlX2V2ZW50
+          XzQxOShzdHJ1Y3QgZnNub3RpZnlfZ3JvdXAgKmdyb3VwLCBzdHJ1Y3QgaW5vZGUgKmlub2RlLCB1
+          MzIgbWFzaywKKyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29uc3Qgdm9pZCAqZGF0
+          YSwgaW50IGRhdGFfdHlwZSwgY29uc3QgdW5zaWduZWQgY2hhciAqZmlsZV9uYW1lLAorICAgICAg
+          ICAgICAgICAgICAgICAgICAgICAgICAgICB1MzIgY29va2llLCBzdHJ1Y3QgZnNub3RpZnlfaXRl
+          cl9pbmZvICppdGVyX2luZm8pCit7CisgICAgc3RydWN0IHFzdHIgbmFtZTsKKworICAgIGlmICgh
+          ZmlsZV9uYW1lKQorICAgICAgICByZXR1cm4gMDsKKyAgICBuYW1lLm5hbWUgPSAoY29uc3QgY2hh
+          ciAqKWZpbGVfbmFtZTsKKyAgICBuYW1lLmxlbiA9IHN0cmxlbigoY29uc3QgY2hhciAqKWZpbGVf
+          bmFtZSk7CisgICAgcmV0dXJuIGtzdV9oYW5kbGVfaW5vZGVfZXZlbnQoTlVMTCwgbWFzaywgaW5v
+          ZGUsIE5VTEwsICZuYW1lLCBjb29raWUpOworfQorI2VuZGlmCisKIHN0YXRpYyBjb25zdCBzdHJ1
+          Y3QgZnNub3RpZnlfb3BzIGtzdV9vcHMgPSB7CisjaWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtF
+          Uk5FTF9WRVJTSU9OKDUsIDksIDApCiAgICAgLmhhbmRsZV9pbm9kZV9ldmVudCA9IGtzdV9oYW5k
+          bGVfaW5vZGVfZXZlbnQsCisjZWxzZQorICAgIC5oYW5kbGVfZXZlbnQgPSBrc3VfaGFuZGxlX2V2
+          ZW50XzQxOSwKKyNlbmRpZgogfTsKIAogc3RhdGljIGludCBhZGRfbWFya19vbl9pbm9kZShzdHJ1
+          Y3QgaW5vZGUgKmlub2RlLCB1MzIgbWFzaywgc3RydWN0IGZzbm90aWZ5X21hcmsgKipvdXQpCg==' | base64 -d > /tmp/po419.patch
           echo "=== apply seccomp_cache patch ==="
           patch -p1 --batch --dry-run < /tmp/sc419.patch && patch -p1 --batch < /tmp/sc419.patch
           echo "=== apply su_mount_ns patch ==="
           patch -p1 --batch --dry-run < /tmp/sm419.patch && patch -p1 --batch < /tmp/sm419.patch
-          echo "=== verify (expect 1 and 1) ==="
+          echo "=== apply pkg_observer patch ==="
+          patch -p1 --batch --dry-run < /tmp/po419.patch && patch -p1 --batch < /tmp/po419.patch
+          echo "=== verify (expect 1/1/1) ==="
           grep -c "KERNEL_VERSION(5, 9, 0)" drivers/kernelsu/infra/seccomp_cache.c
           grep -c "KERNEL_VERSION(5, 1, 0)" drivers/kernelsu/infra/su_mount_ns.c
+          grep -c "ksu_handle_event_419" drivers/kernelsu/manager/pkg_observer.c
 
       - name: Detect defconfig and base config
         id: defc
