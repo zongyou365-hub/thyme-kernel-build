@@ -126,23 +126,31 @@ jobs:
             printf '#ifndef _LINUX_MINMAX_SHIM_H\n#define _LINUX_MINMAX_SHIM_H\n#include <linux/kernel.h>\n#endif\n' > include/linux/minmax.h
             echo ">> shim added: linux/minmax.h"
           fi
-          # strncpy_from_user_nofault (added 5.8) -> forward to strncpy_from_user
-          # 依据: sucompat.c:103/138 调用点均在进程上下文(可睡眠)，转发语义等价
-          NOFAULT_BODY='\n/* build shim (4.19 LTS): strncpy_from_user_nofault added in 5.8 */\n#ifndef __KSU_4_19_NOFAULT_SHIM\n#define __KSU_4_19_NOFAULT_SHIM\nstatic inline long strncpy_from_user_nofault(char *dst, const void __user *src, long count)\n{\n\treturn strncpy_from_user(dst, src, count);\n}\n#endif\n'
-          if ! grep -q "strncpy_from_user_nofault" include/linux/uaccess.h; then
+          # 5.8+ nofault family shims (4.19 LTS):
+          #   strncpy_from_user_nofault -> strncpy_from_user
+          #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write} (5.8 改名)
+          # 自包含 extern 声明，避免 include 顺序死角
+          NOFAULT_BODY='\n/* build shim (4.19 LTS): 5.8+ nofault family */\n#ifndef __KSU_4_19_NOFAULT_SHIM\n#define __KSU_4_19_NOFAULT_SHIM\nextern long probe_kernel_read(void *dst, const void *src, size_t size);\nextern long probe_kernel_write(void *dst, const void *src, size_t size);\nextern long strncpy_from_user(char *dest, const char __user *src, long count);\nstatic inline long strncpy_from_user_nofault(char *dst, const void __user *src, long count)\n{\n\treturn strncpy_from_user(dst, src, count);\n}\nstatic inline long copy_from_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_read(dst, src, size);\n}\nstatic inline long copy_to_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_write(dst, src, size);\n}\n#endif\n'
+          if ! grep -q "__KSU_4_19_NOFAULT_SHIM" include/linux/uaccess.h; then
             printf "$NOFAULT_BODY" >> include/linux/uaccess.h
-            echo ">> shim added: strncpy_from_user_nofault -> linux/uaccess.h"
+            echo ">> shim added: nofault family -> linux/uaccess.h"
           fi
-          if ! grep -q "strncpy_from_user_nofault" arch/arm64/include/asm/uaccess.h; then
+          if ! grep -q "__KSU_4_19_NOFAULT_SHIM" arch/arm64/include/asm/uaccess.h; then
             printf "$NOFAULT_BODY" >> arch/arm64/include/asm/uaccess.h
-            echo ">> shim added: strncpy_from_user_nofault -> asm/uaccess.h"
+            echo ">> shim added: nofault family -> asm/uaccess.h"
           fi
           # belt-and-suspenders: 直接替换 kernelsu 内调用点(与 shim 等价)
           echo "=== nofault usage scan ==="
-          grep -rn "strncpy_from_user_nofault" drivers/kernelsu/ || echo "(none)"
-          find drivers/kernelsu \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/strncpy_from_user_nofault(/strncpy_from_user(/' {} +
+          grep -rn "nofault" drivers/kernelsu/ || echo "(none)"
+          echo "=== find diag (symlink check) ==="
+          ls -ld drivers/kernelsu || true
+          echo "=== replace via grep -rl ==="
+          grep -rlE "strncpy_from_user_nofault|copy_to_kernel_nofault|copy_from_kernel_nofault" drivers/kernelsu/ 2>/dev/null | while IFS= read -r f; do
+            sed -i 's/strncpy_from_user_nofault(/strncpy_from_user(/; s/copy_to_kernel_nofault(/probe_kernel_write(/; s/copy_from_kernel_nofault(/probe_kernel_read(/' "$f"
+            echo "  replaced: $f"
+          done
           echo "=== after replace ==="
-          grep -rn "strncpy_from_user_nofault" drivers/kernelsu/ || echo "(no more references)"
+          grep -rn "nofault" drivers/kernelsu/ || echo "(no more references)"
           echo "=== proactive scan: known 5.8+ APIs ==="
           for api in copy_struct_from_user vma_lookup mmap_read_lock mmap_write_lock pin_user_pages ktime_get_boottime_ts64; do
             echo "--- $api ---"
