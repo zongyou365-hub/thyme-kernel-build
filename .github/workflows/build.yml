@@ -126,18 +126,15 @@ jobs:
             printf '#ifndef _LINUX_MINMAX_SHIM_H\n#define _LINUX_MINMAX_SHIM_H\n#include <linux/kernel.h>\n#endif\n' > include/linux/minmax.h
             echo ">> shim added: linux/minmax.h"
           fi
-          # 5.8+ nofault family shims (4.19 LTS):
-          #   strncpy_from_user_nofault -> strncpy_from_user
-          #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write} (5.8 改名)
-          # 自包含 extern 声明，避免 include 顺序死角
-          NOFAULT_BODY='\n/* build shim (4.19 LTS): 5.8+ nofault family */\n#ifndef __KSU_4_19_NOFAULT_SHIM\n#define __KSU_4_19_NOFAULT_SHIM\nextern long probe_kernel_read(void *dst, const void *src, size_t size);\nextern long probe_kernel_write(void *dst, const void *src, size_t size);\nextern long strncpy_from_user(char *dest, const char __user *src, long count);\nstatic inline long strncpy_from_user_nofault(char *dst, const void __user *src, long count)\n{\n\treturn strncpy_from_user(dst, src, count);\n}\nstatic inline long copy_from_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_read(dst, src, size);\n}\nstatic inline long copy_to_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_write(dst, src, size);\n}\n#endif\n'
+          # 5.8+ nofault family shims (4.19 LTS) —— 仅注入 linux/uaccess.h
+          #   strncpy_from_user_nofault -> pagefault_disable + strncpy_from_user
+          #   copy_{from,to}_kernel_nofault -> probe_kernel_{read,write}
+          #   copy_{from,to}_user_nofault -> access_ok + __copy_*_user_inatomic
+          # 依赖符号(probe_kernel_*, access_ok, __copy_*_inatomic, pagefault_*, VERIFY_*)均在注入点之前可见
+          NOFAULT_BODY='\n/* build shim (4.19 LTS): 5.8 nofault family -> 4.19 equivalents */\n#ifndef __KSU_4_19_NOFAULT_SHIM\n#define __KSU_4_19_NOFAULT_SHIM\nstatic inline long strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr, long count)\n{\n\tlong ret;\n\tif (unlikely(count <= 0))\n\t\treturn 0;\n\tpagefault_disable();\n\tret = strncpy_from_user(dst, unsafe_addr, count);\n\tpagefault_enable();\n\treturn ret;\n}\nstatic inline long copy_from_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_read(dst, src, size);\n}\nstatic inline long copy_to_kernel_nofault(void *dst, const void *src, size_t size)\n{\n\treturn probe_kernel_write(dst, src, size);\n}\nstatic inline long copy_from_user_nofault(void *dst, const void __user *src, size_t size)\n{\n\tlong ret;\n\tif (!access_ok(VERIFY_READ, src, size))\n\t\treturn -EFAULT;\n\tpagefault_disable();\n\tret = __copy_from_user_inatomic(dst, src, size);\n\tpagefault_enable();\n\treturn ret ? -EFAULT : 0;\n}\nstatic inline long copy_to_user_nofault(void __user *dst, const void *src, size_t size)\n{\n\tlong ret;\n\tif (!access_ok(VERIFY_WRITE, dst, size))\n\t\treturn -EFAULT;\n\tpagefault_disable();\n\tret = __copy_to_user_inatomic(dst, src, size);\n\tpagefault_enable();\n\treturn ret ? -EFAULT : 0;\n}\n#endif\n'
           if ! grep -q "__KSU_4_19_NOFAULT_SHIM" include/linux/uaccess.h; then
             printf "$NOFAULT_BODY" >> include/linux/uaccess.h
             echo ">> shim added: nofault family -> linux/uaccess.h"
-          fi
-          if ! grep -q "__KSU_4_19_NOFAULT_SHIM" arch/arm64/include/asm/uaccess.h; then
-            printf "$NOFAULT_BODY" >> arch/arm64/include/asm/uaccess.h
-            echo ">> shim added: nofault family -> asm/uaccess.h"
           fi
           # belt-and-suspenders: 直接替换 kernelsu 内调用点(与 shim 等价)
           echo "=== nofault usage scan ==="
@@ -145,8 +142,8 @@ jobs:
           echo "=== find diag (symlink check) ==="
           ls -ld drivers/kernelsu || true
           echo "=== replace via grep -rl ==="
-          grep -rlE "strncpy_from_user_nofault|copy_to_kernel_nofault|copy_from_kernel_nofault" drivers/kernelsu/ 2>/dev/null | while IFS= read -r f; do
-            sed -i 's/strncpy_from_user_nofault(/strncpy_from_user(/; s/copy_to_kernel_nofault(/probe_kernel_write(/; s/copy_from_kernel_nofault(/probe_kernel_read(/' "$f"
+          grep -rlE "strncpy_from_user_nofault|copy_to_kernel_nofault|copy_from_kernel_nofault|copy_from_user_nofault|copy_to_user_nofault" drivers/kernelsu/ 2>/dev/null | while IFS= read -r f; do
+            sed -i 's/strncpy_from_user_nofault(/strncpy_from_user(/; s/copy_to_kernel_nofault(/probe_kernel_write(/; s/copy_from_kernel_nofault(/probe_kernel_read(/; s/from_user_nofault(/from_user(/; s/to_user_nofault(/to_user(/' "$f"
             echo "  replaced: $f"
           done
           echo "=== after replace ==="
