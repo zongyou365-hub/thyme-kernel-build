@@ -741,6 +741,15 @@ jobs:
             $SC -e "$opt" 2>/dev/null || true
           done
           $SC --set-str PSTORE_COMPRESS_DEFAULT "deflate" 2>/dev/null || true
+          # 0.6) 启动必需项（Run#25 实测：内核能编但启动即回落）
+          #   本树 drivers/base/Kconfig 把 DEVTMPFS 的 "default y" 删掉了 ->
+          #   /dev 为空 -> Android init 无法挂载 devtmpfs -> 静默启动失败
+          #   其余为 SM8250(kona) 平台启动/存储/加密必需驱动
+          BOOT_CFG="DEVTMPFS REGULATOR_QCOM_RPMH REGULATOR_QCOM_SPMI CRYPTO_DEV_QCOM_ICE EROFS_FS UNICODE QCOM_TSENS DRM_MSM"
+          for opt in $BOOT_CFG; do
+            $SC -e "$opt" 2>/dev/null || true
+          done
+          echo "boot-critical requested: $BOOT_CFG"
           # 1) KALLSYMS（KPM 硬性前提）
           $SC -e KALLSYMS -e KALLSYMS_ALL
           # 2) KernelSU 本体
@@ -762,6 +771,14 @@ jobs:
           # 6) LOCALVERSION 标记
           $SC --set-str LOCALVERSION "-thyme-SukiSU-KPM"
           make O=out ARCH=arm64 olddefconfig
+          echo "=== boot-critical config verify (OK/MISS) ==="
+          for opt in $BOOT_CFG; do
+            if grep -q "^CONFIG_$opt=y" out/.config; then
+              echo "  OK   $opt"
+            else
+              echo "  MISS $opt -> $(grep -E "^(CONFIG_${opt}=|# CONFIG_${opt} )" out/.config | head -1)"
+            fi
+          done
           echo "=== 最终配置核验 ==="
           grep -E "CONFIG_(KSU|KPM|KALLSYMS|SUSFS|KSU_MANUAL_HOOK|LOCALVERSION)[=_]" out/.config | grep -v "^#" || true
 
