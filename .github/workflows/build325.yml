@@ -919,7 +919,7 @@ jobs:
           done
 
       - name: Upload kernel + log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thyme-325-Image
           path: |
@@ -929,7 +929,7 @@ jobs:
 
       - name: Upload failure log
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-log-failure
           path: kernel/build_*.log
