@@ -158,13 +158,12 @@ jobs:
           $SC -d KSU_MODULE 2>/dev/null || true
           $SC -e KSU
           grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK)"
-          # --- SUSFS ---
-          for opt in KSU_SUSFS SUSFS; do
-            grep -qE "^config $opt" drivers/kernelsu/Kconfig && $SC -e "$opt" || true
-          done
-          for opt in $(grep -oE "^config KSU_SUSFS_[A-Z_0-9]+" drivers/kernelsu/Kconfig | awk '{print $2}'); do
-            $SC -e "$opt" 2>/dev/null || true
-          done
+          # --- KPM (builtin branch, default n) ---
+          grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM && echo "KPM enabled" || echo "(no KPM in Kconfig)"
+          # --- SUSFS: OFF. builtin branch does not bundle <linux/susfs.h>/susfs_def.h,
+          #     they come from susfs4ksu and need fs/ patches. Add later once boot works. ---
+          $SC -d KSU_SUSFS 2>/dev/null || true
+          echo "SUSFS disabled (headers not bundled in builtin branch)"
           make O=out ARCH=arm64 olddefconfig
           echo "=== config verify ==="
           grep -E "CONFIG_(LOCALVERSION|MODULE_SIG_FORCE|MODVERSIONS|DEVTMPFS|DRM_MSM|KSU|KALLSYMS_ALL|IKCONFIG)[= ]" out/.config | grep -v "^#" || true
@@ -209,7 +208,7 @@ jobs:
           echo "=== vermagic ==="
           strings out/arch/arm64/boot/$TGT | grep -m1 "SMP preempt"
           echo "=== symbol self-check ==="
-          for kw in sukisu_kpm_control susfs KernelSU; do
+          for kw in sukisu_kpm_control kpm KernelSU; do
             echo "  $kw = $(strings out/arch/arm64/boot/$TGT | grep -c "$kw")"
           done
 
