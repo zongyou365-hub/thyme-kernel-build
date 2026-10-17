@@ -58,14 +58,21 @@ jobs:
           echo "=== cgroup.c structure ==="
           grep -n "purge_effective_progs\|update_effective_progs" kernel/bpf/cgroup.c | head -8
 
-      - name: Download toolchain (proton-clang 20210522 = clang 13.0.0)
+      - name: Download toolchain (AOSP LLVM clang r547379 = same as M13)
         run: |
+          set -e
           mkdir -p "$HOME/tc" && cd "$HOME/tc"
-          wget -qO tc.zip https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
-          unzip -q tc.zip
-          mv proton-clang-20210522 proton-clang
-          export PATH="$HOME/tc/proton-clang/bin:$PATH"
-          clang --version | head -2
+          echo "=== trying android.googlesource.com ==="
+          curl -fsSL --retry 3 --max-time 600 \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz" \
+            -o clang.tar.gz || \
+          curl -fsSL --retry 3 --max-time 600 \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz" \
+            -o clang.tar.gz
+          ls -la clang.tar.gz
+          mkdir -p clang && tar -xzf clang.tar.gz -C clang
+          export PATH="$HOME/tc/clang/bin:$PATH"
+          clang --version | head -3
           ld.lld --version | head -1
 
       - name: Patch vendor hooks build
@@ -174,17 +181,19 @@ jobs:
         id: build
         run: |
           cd kernel
-          export PATH="$HOME/tc/proton-clang/bin:$PATH"
+          export PATH="$HOME/tc/clang/bin:$PATH"
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+          export CLANG_TRIPLE=aarch64-linux-gnu-
           export KBUILD_BUILD_VERSION=1
           export KBUILD_BUILD_USER=builder
           export KBUILD_BUILD_HOST=builder
+          clang --version | head -2
           TGT="${{ inputs.target }}"
           [ -z "$TGT" ] && TGT="Image"
           set -o pipefail
-          make O=out ARCH=arm64 CC=clang LD=ld.lld \
+          make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- \
             AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
             -j"$(nproc)" "$TGT" > "build_${TGT}.log" 2>&1 || {
