@@ -757,7 +757,7 @@ jobs:
             cat >> drivers/kernelsu/hook/syscall_event_bridge.c <<'EOC'
 
           /* ---- legacy manual-hook ABI ----------------------------------------
-           * The thyme tree still carries old-style KernelSU manual hooks in fs/*.c
+           * The thyme tree still carries old-style KernelSU manual hooks in fs/ exec/stat/open/read_write
            * (guarded by CONFIG_KSU). This codebase routes the same events through
            * the syscall hook, so these are no-ops kept only to satisfy the linker.
            */
