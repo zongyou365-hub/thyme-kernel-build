@@ -15,6 +15,10 @@ on:
         description: "CONFIG_LOCALVERSION (must match installed module vermagic)"
         default: "-HyperOS3-A16-Sky-Developers"
         type: string
+      with_ksu:
+        description: "Integrate SukiSU+KPM (set false for a vanilla boot test)"
+        default: "true"
+        type: string
 
 jobs:
   build:
@@ -97,6 +101,7 @@ jobs:
           grep -rn "strnstr(" drivers/gpu techpack 2>/dev/null | grep -vE "strnstr\([^,]+, *[^,]+, *[^)]+\)" | head -10 || true
 
       - name: Integrate SukiSU (manual clone, no setup.sh)
+        if: ${{ inputs.with_ksu != 'false' }}
         run: |
           cd kernel
           BR="${{ inputs.ksu_branch }}"
@@ -143,6 +148,7 @@ jobs:
           fi
 
       - name: 4.19 kernel shims (MODULE_IMPORT_NS / nofault / strscpy_pad / TWA_RESUME)
+        if: ${{ inputs.with_ksu != 'false' }}
         run: |
           cd kernel
           python3 - <<'PY'
@@ -258,6 +264,7 @@ jobs:
           ls -la include/linux/minmax.h include/uapi/linux/mount.h
 
       - name: Apply SukiSU 4.19 compat patches (12)
+        if: ${{ inputs.with_ksu != 'false' }}
         run: |
           cd kernel
           base64 -d > /tmp/fw419.patch <<'B64'
@@ -850,19 +857,22 @@ jobs:
           # ROOT CAUSE: kernelsu/Kconfig has `config KSU  depends on KPROBES && EXT4_FS`.
           # thyme_defconfig uses F2FS and leaves both off -> CONFIG_KSU is invisible to Kconfig,
           # so olddefconfig silently drops it even after scripts/config -e KSU.
-          $SC -e KPROBES
-          $SC -e EXT4_FS
-          $SC -d KSU_MODULE 2>/dev/null || true
-          $SC -e KSU
-          echo "=== after scripts/config -e KSU ==="
-          grep -n "^CONFIG_KSU" out/.config || echo "(scripts/config -e KSU had no effect)"
-          grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK)"
-          # --- KPM (builtin branch, default n) ---
-          grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM && echo "KPM enabled" || echo "(no KPM in Kconfig)"
-          # --- SUSFS: OFF. builtin branch does not bundle <linux/susfs.h>/susfs_def.h,
-          #     they come from susfs4ksu and need fs/ patches. Add later once boot works. ---
-          $SC -d KSU_SUSFS 2>/dev/null || true
-          echo "SUSFS disabled (headers not bundled in builtin branch)"
+          if [ "${{ inputs.with_ksu }}" != "false" ]; then
+            $SC -e KPROBES
+            $SC -e EXT4_FS
+            $SC -d KSU_MODULE 2>/dev/null || true
+            $SC -e KSU
+            echo "=== after scripts/config -e KSU ==="
+            grep -n "^CONFIG_KSU" out/.config || echo "(scripts/config -e KSU had no effect)"
+            grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK)"
+            # --- KPM (builtin branch, default n) ---
+            grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM && echo "KPM enabled" || echo "(no KPM in Kconfig)"
+            # --- SUSFS: OFF (headers not bundled, needs susfs4ksu + fs patches) ---
+            $SC -d KSU_SUSFS 2>/dev/null || true
+            echo "SUSFS disabled (headers not bundled in builtin branch)"
+          else
+            echo "=== with_ksu=false -> vanilla boot test, KSU skipped ==="
+          fi
           make O=out ARCH=arm64 olddefconfig
           echo "=== config verify ==="
           grep -E "CONFIG_(LOCALVERSION|MODULE_SIG_FORCE|MODVERSIONS|DEVTMPFS|DRM_MSM|KSU|KALLSYMS_ALL|IKCONFIG)[= ]" out/.config | grep -v "^#" || true
@@ -873,9 +883,13 @@ jobs:
             grep -q "^CONFIG_$opt=y" out/.config && echo "  OK   $opt" || echo "  MISS $opt"
           done
           echo "--- hard requirement (fail fast) ---"
-          for opt in KSU KPM; do
-            grep -q "^CONFIG_$opt=y" out/.config || { echo "!! FATAL: CONFIG_$opt=y missing, aborting before 20min build"; exit 1; }
-          done
+          if [ "${{ inputs.with_ksu }}" != "false" ]; then
+            for opt in KSU KPM; do
+              grep -q "^CONFIG_$opt=y" out/.config || { echo "!! FATAL: CONFIG_$opt=y missing, aborting before 20min build"; exit 1; }
+            done
+          else
+            echo "  skipped (vanilla build)"
+          fi
           echo "--- display stack (techpack, DRM_MSM must be off) ---"
           grep -E "CONFIG_(DRM_MSM|TECHPACK|DRM_MSM_SDE)[= ]" out/.config | grep -v "^#" || echo "  DRM_MSM not set (expected)"
 
