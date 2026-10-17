@@ -114,8 +114,13 @@ jobs:
           grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' | tr '\n' ' '; echo
           echo "=== wire into Kbuild ==="
           grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
-          grep -q 'drivers/kernelsu/Kconfig' drivers/Kconfig || sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          # NOTE: setup.sh uses `sed /endmenu/i`, which nests the source inside an unrelated
+          # menu block -> CONFIG_KSU silently disappears from .config. Append at EOF instead.
+          sed -i '/drivers\/kernelsu\/Kconfig/d' drivers/Kconfig
+          printf '\nsource "drivers/kernelsu/Kconfig"\n' >> drivers/Kconfig
           grep -n "kernelsu" drivers/Kconfig drivers/Makefile | head -4
+          echo "=== tail of drivers/Kconfig ==="
+          tail -4 drivers/Kconfig
           echo "=== KPM sources ==="
           ls KernelSU/kernel/kpm/ 2>/dev/null | head -10 || echo "(no kpm dir)"
           echo "=== Makefile CFLAGS health check ==="
@@ -177,8 +182,12 @@ jobs:
           echo "--- KSU/SUSFS ---"
           grep -E "CONFIG_(KSU|SUSFS)[A-Z_]*=" out/.config | head -20 || true
           echo "--- MISS check ---"
-          for opt in DEVTMPFS KALLSYMS_ALL KSU; do
+          for opt in DEVTMPFS KALLSYMS_ALL KSU KPM; do
             grep -q "^CONFIG_$opt=y" out/.config && echo "  OK   $opt" || echo "  MISS $opt"
+          done
+          echo "--- hard requirement (fail fast) ---"
+          for opt in KSU KPM; do
+            grep -q "^CONFIG_$opt=y" out/.config || { echo "!! FATAL: CONFIG_$opt=y missing, aborting before 20min build"; exit 1; }
           done
           echo "--- display stack (techpack, DRM_MSM must be off) ---"
           grep -E "CONFIG_(DRM_MSM|TECHPACK|DRM_MSM_SDE)[= ]" out/.config | grep -v "^#" || echo "  DRM_MSM not set (expected)"
