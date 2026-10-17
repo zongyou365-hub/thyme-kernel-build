@@ -114,13 +114,14 @@ jobs:
           grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' | tr '\n' ' '; echo
           echo "=== wire into Kbuild ==="
           grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
-          # NOTE: setup.sh uses `sed /endmenu/i`, which nests the source inside an unrelated
-          # menu block -> CONFIG_KSU silently disappears from .config. Append at EOF instead.
+          # insert source at the very TOP (before any menu block) - EOF placement was silently ignored
           sed -i '/drivers\/kernelsu\/Kconfig/d' drivers/Kconfig
-          printf '\nsource "drivers/kernelsu/Kconfig"\n' >> drivers/Kconfig
+          sed -i '1i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           grep -n "kernelsu" drivers/Kconfig drivers/Makefile | head -4
-          echo "=== tail of drivers/Kconfig ==="
-          tail -4 drivers/Kconfig
+          echo "=== head of drivers/Kconfig ==="
+          head -5 drivers/Kconfig
+          echo "=== is drivers/Kconfig referenced by top-level Kconfig? ==="
+          grep -n "drivers/Kconfig" Kconfig arch/arm64/Kconfig 2>/dev/null | head -4
           echo "=== KPM sources ==="
           ls KernelSU/kernel/kpm/ 2>/dev/null | head -10 || echo "(no kpm dir)"
           echo "=== Makefile CFLAGS health check ==="
@@ -143,6 +144,8 @@ jobs:
         run: |
           cd kernel
           make O=out ARCH=arm64 thyme_defconfig
+          echo "=== KSU right after thyme_defconfig? ==="
+          grep -n "^CONFIG_KSU" out/.config || echo "(KSU absent in defconfig output -> Kconfig not parsed)"
           # --- merge Xiaomi platform fragments (MANDATORY) ---
           # thyme_defconfig alone lacks CONFIG_MACH_XIAOMI_THYME / QCA_CLD_WLAN / CMDLINE /
           # touch / charger / fingerprint etc. Booting without these hangs before pstore init.
@@ -169,6 +172,8 @@ jobs:
           # --- KernelSU ---
           $SC -d KSU_MODULE 2>/dev/null || true
           $SC -e KSU
+          echo "=== after scripts/config -e KSU ==="
+          grep -n "^CONFIG_KSU" out/.config || echo "(scripts/config -e KSU had no effect)"
           grep -qE "^config KSU_MANUAL_HOOK" drivers/kernelsu/Kconfig && $SC -e KSU_MANUAL_HOOK || echo "(no KSU_MANUAL_HOOK)"
           # --- KPM (builtin branch, default n) ---
           grep -qE "^config KPM" drivers/kernelsu/Kconfig && $SC -e KPM && echo "KPM enabled" || echo "(no KPM in Kconfig)"
