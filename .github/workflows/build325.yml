@@ -121,7 +121,9 @@ jobs:
           $SC -e MODULE_SIG
           $SC -e MODVERSIONS
           # --- boot / runtime essentials ---
-          for opt in DEVTMPFS DEVTMPFS_MOUNT DRM_MSM REGULATOR_QCOM_SPMI QCOM_TSENS \
+          # NOTE: DRM_MSM must stay OFF. This tree drives display via techpack/display/msm;
+          # enabling drivers/gpu/drm/msm causes duplicate symbols (msm_dss_*, msm_framebuffer_*, ...).
+          for opt in DEVTMPFS DEVTMPFS_MOUNT REGULATOR_QCOM_SPMI QCOM_TSENS \
                      ANDROID_VENDOR_HOOKS TRACEPOINTS KALLSYMS KALLSYMS_ALL \
                      IKCONFIG IKCONFIG_PROC PSTORE PSTORE_CONSOLE PSTORE_PMSG PSTORE_RAM; do
             $SC -e "$opt" 2>/dev/null || true
@@ -143,9 +145,11 @@ jobs:
           echo "--- KSU/SUSFS ---"
           grep -E "CONFIG_(KSU|SUSFS)[A-Z_]*=" out/.config | head -20 || true
           echo "--- MISS check ---"
-          for opt in DEVTMPFS DRM_MSM KALLSYMS_ALL KSU; do
+          for opt in DEVTMPFS KALLSYMS_ALL KSU; do
             grep -q "^CONFIG_$opt=y" out/.config && echo "  OK   $opt" || echo "  MISS $opt"
           done
+          echo "--- display stack (techpack, DRM_MSM must be off) ---"
+          grep -E "CONFIG_(DRM_MSM|TECHPACK|DRM_MSM_SDE)[= ]" out/.config | grep -v "^#" || echo "  DRM_MSM not set (expected)"
 
       - name: Build Image
         id: build
