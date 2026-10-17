@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       ksu_branch:
-        description: "SukiSU setup.sh branch"
-        default: "susfs_new"
+        description: "SukiSU branch (builtin = KPM+SUSFS)"
+        default: "builtin"
         type: string
       target:
         description: "make target"
@@ -44,6 +44,9 @@ jobs:
           git clone --depth=1 -b 16.0 \
             https://github.com/HuTao77-Studio/android_kernel_xiaomi_thyme.git kernel
           cd kernel
+          echo "=== strip localversion-cip / -st (scripts/setlocalversion appends them) ==="
+          ls -la localversion-* 2>/dev/null || true
+          rm -f localversion-cip localversion-st
           echo "=== HEAD ==="
           git log -1 --format="%H %cd %s"
           echo "=== Version ==="
@@ -90,7 +93,7 @@ jobs:
         run: |
           cd kernel
           BR="${{ inputs.ksu_branch }}"
-          [ -z "$BR" ] && BR="susfs_new"
+          [ -z "$BR" ] && BR="builtin"
           curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BR"
           echo "=== drivers/kernelsu ==="
           ls drivers/kernelsu/ | head -30

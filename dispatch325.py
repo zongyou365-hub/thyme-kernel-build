@@ -50,7 +50,7 @@ print("baseline run id:", baseline, flush=True)
 try:
     api(f"{H}/actions/workflows/{WF}/dispatches", method="POST", data={
         "ref": "main",
-        "inputs": {"ksu_branch": "susfs_new", "target": "Image",
+        "inputs": {"ksu_branch": "builtin", "target": "Image",
                    "localversion": "-HyperOS3-A16-Sky-Developers"},
     })
     print("DISPATCH OK ->", WF, flush=True)
