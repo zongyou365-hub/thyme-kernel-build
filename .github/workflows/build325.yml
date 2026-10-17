@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       ksu_branch:
-        description: "SukiSU branch (builtin = KPM+SUSFS)"
-        default: "builtin"
+        description: "SukiSU branch (susfs_new = best 4.19 compat + KPM)"
+        default: "susfs_new"
         type: string
       target:
         description: "make target"
@@ -100,7 +100,7 @@ jobs:
         run: |
           cd kernel
           BR="${{ inputs.ksu_branch }}"
-          [ -z "$BR" ] && BR="builtin"
+          [ -z "$BR" ] && BR="susfs_new"
           rm -rf KernelSU drivers/kernelsu
           git clone --depth=1 -b "$BR" https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
           echo "=== repo state ==="
