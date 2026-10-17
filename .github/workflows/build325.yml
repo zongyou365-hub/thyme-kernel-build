@@ -116,6 +116,14 @@ jobs:
         run: |
           cd kernel
           make O=out ARCH=arm64 thyme_defconfig
+          # --- merge Xiaomi platform fragments (MANDATORY) ---
+          # thyme_defconfig alone lacks CONFIG_MACH_XIAOMI_THYME / QCA_CLD_WLAN / CMDLINE /
+          # touch / charger / fingerprint etc. Booting without these hangs before pstore init.
+          ARCH=arm64 ./scripts/kconfig/merge_config.sh -m -O out out/.config \
+            arch/arm64/configs/vendor/xiaomi/sm8250-common.config \
+            arch/arm64/configs/vendor/xiaomi/thyme.config
+          echo "=== fragment merge check ==="
+          grep -E "CONFIG_(MACH_XIAOMI_THYME|QCA_CLD_WLAN|BUILD_ARM64_DT_OVERLAY|CMDLINE|TOUCHSCREEN_ST_FTS_V521)=" out/.config || echo "  !! fragment keys MISSING"
           SC="./scripts/config --file out/.config"
           # --- align with installed vendor modules ---
           $SC --set-str LOCALVERSION "${{ inputs.localversion }}"
