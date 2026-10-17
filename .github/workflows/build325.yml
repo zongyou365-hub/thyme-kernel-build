@@ -112,16 +112,19 @@ jobs:
           ls -la drivers/kernelsu | head -3
           echo "=== Kconfig items ==="
           grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' | tr '\n' ' '; echo
-          echo "=== wire into Kbuild ==="
+          echo "=== wire into Kbuild (INLINE Kconfig, source is silently ignored) ==="
           grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
-          # insert source at the very TOP (before any menu block) - EOF placement was silently ignored
           sed -i '/drivers\/kernelsu\/Kconfig/d' drivers/Kconfig
-          sed -i '1i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
-          grep -n "kernelsu" drivers/Kconfig drivers/Makefile | head -4
-          echo "=== head of drivers/Kconfig ==="
-          head -5 drivers/Kconfig
-          echo "=== is drivers/Kconfig referenced by top-level Kconfig? ==="
-          grep -n "drivers/Kconfig" Kconfig arch/arm64/Kconfig 2>/dev/null | head -4
+          sed -i '/^# --- KSU inline Kconfig start ---$/,/^# --- KSU inline Kconfig end ---$/d' drivers/Kconfig
+          {
+            echo ""
+            echo "# --- KSU inline Kconfig start ---"
+            cat drivers/kernelsu/Kconfig
+            echo "# --- KSU inline Kconfig end ---"
+          } >> drivers/Kconfig
+          grep -n "kernelsu\|KSU inline" drivers/Kconfig drivers/Makefile | head -4
+          echo "=== tail of drivers/Kconfig ==="
+          tail -12 drivers/Kconfig
           echo "=== KPM sources ==="
           ls KernelSU/kernel/kpm/ 2>/dev/null | head -10 || echo "(no kpm dir)"
           echo "=== Makefile CFLAGS health check ==="
