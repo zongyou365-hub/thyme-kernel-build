@@ -628,6 +628,38 @@ jobs:
           YXAgZW50cnkgbWlzc2luZ1xuIik7CisgICAgICAgIHJldHVybjsKKyAgICB9CiAgICAgZWJpdG1h
           cF9zZXRfYml0KHNhdHRyLCBhdHRyLT52YWx1ZSAtIDEsIDEpOwogCiAgICAgc3RydWN0IGhhc2h0
           YWJfbm9kZSAqbm9kZTsK' | base64 -d > /tmp/sp419.patch
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9mZWF0dXJlL2tlcm5lbF91bW91bnQuYworKysgYi9kcml2
+          ZXJzL2tlcm5lbHN1L2ZlYXR1cmUva2VybmVsX3Vtb3VudC5jCkBAIC00MSwxMiArNDEsMjYgQEAK
+          ICAgICAuc2V0X2hhbmRsZXIgPSBrZXJuZWxfdW1vdW50X2ZlYXR1cmVfc2V0LAogfTsKIAorI2lm
+          IExJTlVYX1ZFUlNJT05fQ09ERSA+PSBLRVJORUxfVkVSU0lPTig1LCA5LCAwKQogZXh0ZXJuIGlu
+          dCBwYXRoX3Vtb3VudChzdHJ1Y3QgcGF0aCAqcGF0aCwgaW50IGZsYWdzKTsKKyNlbmRpZgogCiBz
+          dGF0aWMgdm9pZCBrc3VfdW1vdW50X21udChjb25zdCBjaGFyICptbnQsIHN0cnVjdCBwYXRoICpw
+          YXRoLCBpbnQgZmxhZ3MpCiB7CisjaWYgTElOVVhfVkVSU0lPTl9DT0RFID49IEtFUk5FTF9WRVJT
+          SU9OKDUsIDksIDApCiAgICAgaW50IGVyciA9IHBhdGhfdW1vdW50KHBhdGgsIGZsYWdzKTsKLSAg
+          ICBpZiAoZXJyKSB7CisjZWxzZQorICAgIC8qCisgICAgICogNC4xOSBjb21wYXQ6IHRoaXMgdHJl
+          ZSBoYXMgbm8gcGF0aF91bW91bnQoKSAoaXQgaXMgYW4gQW5kcm9pZCBHS0kKKyAgICAgKiBhZGQt
+          b24sIG5vdCB1cHN0cmVhbSkuICBUaGUga2VybmVsLXNpZGUgInVtb3VudCBtb2R1bGVzIGZvciBh
+          cHBzIgorICAgICAqIGZlYXR1cmUgdGhlcmVmb3JlIGRlZ3JhZGVzIHRvIGEgbm8tb3AgaGVyZTsg
+          bm90aGluZyBjb25zdW1lcyB0aGUKKyAgICAgKiByZXR1cm4gdmFsdWUsIGFuZCB0aGUgbW91bnQg
+          bmFtZXNwYWNlIGlzIGxlZnQgdW50b3VjaGVkLgorICAgICAqLworICAgIGludCBlcnIgPSAtRU5P
+          U1lTOworICAgICh2b2lkKXBhdGg7CisgICAgKHZvaWQpZmxhZ3M7CisjZW5kaWYKKyAgICBpZiAo
+          ZXJyICYmIGVyciAhPSAtRU5PU1lTKSB7CiAgICAgICAgIHByX2luZm8oInVtb3VudCAlcyBmYWls
+          ZWQ6ICVkXG4iLCBtbnQsIGVycik7CiAgICAgfQogfQo=' | base64 -d > /tmp/ku419.patch
+          echo 'LS0tIGEvZHJpdmVycy9rZXJuZWxzdS9wb2xpY3kvYXBwX3Byb2ZpbGUuYworKysgYi9kcml2ZXJz
+          L2tlcm5lbHN1L3BvbGljeS9hcHBfcHJvZmlsZS5jCkBAIC02Myw3ICs2Myw5IEBACiAgICAgcHV0
+          X2dyb3VwX2luZm8oZ3JvdXBfaW5mbyk7CiB9CiAKKyNpZiBMSU5VWF9WRVJTSU9OX0NPREUgPj0g
+          S0VSTkVMX1ZFUlNJT04oNSwgOSwgMCkKIHZvaWQgc2VjY29tcF9maWx0ZXJfcmVsZWFzZShzdHJ1
+          Y3QgdGFza19zdHJ1Y3QgKnRzayk7CisjZW5kaWYKIAogc3RhdGljIHZvaWQgZGlzYWJsZV9zZWNj
+          b21wKHZvaWQpCiB7CkBAIC0xMDMsNyArMTA1LDE3IEBACiAgICAgZmFrZS0+c2lnaGFuZCA9IE5V
+          TEw7CiAjZW5kaWYKIAorI2lmIExJTlVYX1ZFUlNJT05fQ09ERSA+PSBLRVJORUxfVkVSU0lPTig1
+          LCA5LCAwKQogICAgIHNlY2NvbXBfZmlsdGVyX3JlbGVhc2UoZmFrZSk7CisjZWxzZQorICAgIC8q
+          CisgICAgICogNC4xOSBjb21wYXQ6IHNlY2NvbXBfZmlsdGVyX3JlbGVhc2UoKSB3YXMgYWRkZWQg
+          aW4gNS45LgorICAgICAqIHB1dF9zZWNjb21wX2ZpbHRlcigpIGlzIHRoZSA0LjE5IGVxdWl2YWxl
+          bnQ6IGl0IGRyb3BzIHRoZSByZWZlcmVuY2Ugb24KKyAgICAgKiB0c2stPnNlY2NvbXAuZmlsdGVy
+          LCB3aGljaCBpcyBleGFjdGx5IHRoZSAocHJlLWNsZWFyZWQpIGZpbHRlciB3ZSBjb3BpZWQKKyAg
+          ICAgKiBpbnRvIEBmYWtlIGFib3ZlLCBzbyB0aGUgZGV0YWNoZWQgZmlsdGVyIGNoYWluIGlzIGZy
+          ZWVkIGhlcmUuCisgICAgICovCisgICAgcHV0X3NlY2NvbXBfZmlsdGVyKGZha2UpOworI2VuZGlm
+          CiAgICAga2ZyZWUoZmFrZSk7CiB9CiAK' | base64 -d > /tmp/ap419b.patch
           echo "=== apply seccomp_cache patch ==="
           patch -p1 --batch --dry-run < /tmp/sc419.patch && patch -p1 --batch < /tmp/sc419.patch
           echo "=== apply su_mount_ns patch ==="
@@ -658,6 +690,13 @@ jobs:
           patch -p1 --batch --dry-run < /tmp/sp419.patch && patch -p1 --batch < /tmp/sp419.patch
           echo "=== verify sepolicy.c (expect 25) ==="
           grep -c "flex_array" drivers/kernelsu/selinux/sepolicy.c
+          echo "=== apply kernel_umount patch (path_umount 4.19 -> no-op) ==="
+          patch -p1 --batch --dry-run < /tmp/ku419.patch && patch -p1 --batch < /tmp/ku419.patch
+          echo "=== apply app_profile seccomp patch (put_seccomp_filter) ==="
+          patch -p1 --batch --dry-run < /tmp/ap419b.patch && patch -p1 --batch < /tmp/ap419b.patch
+          echo "=== verify run24 fixes (expect 1/1) ==="
+          grep -c "put_seccomp_filter(fake)" drivers/kernelsu/policy/app_profile.c
+          grep -c "err != -ENOSYS" drivers/kernelsu/feature/kernel_umount.c
 
       - name: Detect defconfig and base config
         id: defc
