@@ -884,7 +884,7 @@ jobs:
           ls -la thyme-kernel-*.img || true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thyme-kernel-SukiSU-KPM-SUSFS
           path: |
@@ -894,7 +894,7 @@ jobs:
 
       - name: Upload full build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-log-failure
           path: kernel/build_full_*.log
