@@ -125,6 +125,13 @@ jobs:
           else
             echo "Makefile clean"
           fi
+          echo "=== KPM: 4.19 access_ok() takes 3 args (type, addr, size) ==="
+          if [ -f drivers/kernelsu/kpm/kpm.c ]; then
+            sed -i 's/access_ok(\([^,)]*\), \([^)]*\))/access_ok(VERIFY_WRITE, \1, \2)/g' drivers/kernelsu/kpm/kpm.c
+            grep -n "access_ok" drivers/kernelsu/kpm/kpm.c | head -12
+          else
+            echo "(no kpm.c)"
+          fi
 
       - name: Configure
         id: cfg
