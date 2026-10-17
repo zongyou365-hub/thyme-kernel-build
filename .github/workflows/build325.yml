@@ -231,6 +231,21 @@ jobs:
           #endif
           '''
 
+          import os
+          FORWARD = {
+              "include/linux/minmax.h": "#ifndef _LINUX_MINMAX_419\n#define _LINUX_MINMAX_419\n#include <linux/kernel.h>\n#endif\n",
+              "include/uapi/linux/mount.h": "#ifndef _UAPI_LINUX_MOUNT_419\n#define _UAPI_LINUX_MOUNT_419\n#include <linux/fs.h>\n#include <linux/mount.h>\n#endif\n",
+          }
+          for path, body in FORWARD.items():
+              if os.path.exists(path):
+                  print("  exists   ", path)
+                  continue
+              d = os.path.dirname(path)
+              if d and not os.path.isdir(d):
+                  os.makedirs(d)
+              open(path, "w").write("/* 4.19 compat: this header is 5.x-only, forward it */\n" + body)
+              print("  fwd      ", path)
+
           patch("include/linux/module.h", "define MODULE_IMPORT_NS", MODULE_NS)
           patch("include/linux/uaccess.h", "strncpy_from_user_nofault", UACCESS)
           patch("include/linux/string.h", "strscpy_pad", STRING)
@@ -240,6 +255,7 @@ jobs:
           grep -c "MODULE_IMPORT_NS" include/linux/module.h || true
           grep -c "strncpy_from_user_nofault" include/linux/uaccess.h || true
           grep -c "TWA_RESUME" include/linux/task_work.h || true
+          ls -la include/linux/minmax.h include/uapi/linux/mount.h
 
       - name: Apply SukiSU 4.19 compat patches (12)
         run: |
