@@ -75,6 +75,17 @@ jobs:
           fi
           tail -3 drivers/android/Makefile
 
+      - name: Patch DRM msm_drv strnstr (2-arg call, 4.19 needs 3)
+        run: |
+          cd kernel
+          echo "=== before ==="
+          sed -n '1230,1240p' drivers/gpu/drm/msm/msm_drv.c
+          sed -i 's/strnstr(dev_name(dev), "mdp")/strstr(dev_name(dev), "mdp")/' drivers/gpu/drm/msm/msm_drv.c
+          echo "=== after ==="
+          grep -n "strstr(dev_name" drivers/gpu/drm/msm/msm_drv.c
+          echo "=== scan other suspicious 2-arg strnstr ==="
+          grep -rn "strnstr(" drivers/gpu techpack 2>/dev/null | grep -vE "strnstr\([^,]+, *[^,]+, *[^)]+\)" | head -10 || true
+
       - name: Integrate SukiSU
         run: |
           cd kernel
