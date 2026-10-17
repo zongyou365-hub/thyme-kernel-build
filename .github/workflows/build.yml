@@ -189,6 +189,13 @@ jobs:
           echo "=== include fix verify (expect 1 / 1) ==="
           grep -c "linux/sched/signal.h" drivers/kernelsu/supercall/dispatch.c || true
           grep -c "linux/kernel.h" drivers/kernelsu/feature/adb_root.c || true
+          # --- DRM/MSM subtree fix (pre-applied; only matters once DRM_MSM is enabled) ---
+          # msm_drv.c compare_name_mdp(): 2-arg strnstr(); 4.19 signature is strnstr(s1,s2,len)
+          # intended semantics = "does dev_name contain mdp" -> strstr()
+          if grep -q 'strnstr(dev_name(dev), "mdp")' drivers/gpu/drm/msm/msm_drv.c 2>/dev/null; then
+            sed -i 's/strnstr(dev_name(dev), "mdp")/strstr(dev_name(dev), "mdp")/' drivers/gpu/drm/msm/msm_drv.c
+            echo ">> drm/msm: strnstr -> strstr (2-arg fix pre-applied)"
+          fi
           echo "=== after replace ==="
           grep -rn "nofault" drivers/kernelsu/ || echo "(no more references)"
           echo "=== proactive scan: known 5.8+ APIs ==="
@@ -745,7 +752,9 @@ jobs:
           #   本树 drivers/base/Kconfig 把 DEVTMPFS 的 "default y" 删掉了 ->
           #   /dev 为空 -> Android init 无法挂载 devtmpfs -> 静默启动失败
           #   其余为 SM8250(kona) 平台启动/存储/加密必需驱动
-          BOOT_CFG="DEVTMPFS REGULATOR_QCOM_RPMH REGULATOR_QCOM_SPMI CRYPTO_DEV_QCOM_ICE EROFS_FS UNICODE QCOM_TSENS DRM_MSM"
+          #   注: DRM_MSM 暂不启用 —— Run#26 实测它从未被编译过(msm_drv.c strnstr 2 参 bug)，
+          #       先验证 devtmpfs/regulator 这条主线能否让内核起来，显示驱动下一轮单独处理
+          BOOT_CFG="DEVTMPFS REGULATOR_QCOM_RPMH REGULATOR_QCOM_SPMI CRYPTO_DEV_QCOM_ICE EROFS_FS UNICODE QCOM_TSENS"
           for opt in $BOOT_CFG; do
             $SC -e "$opt" 2>/dev/null || true
           done
