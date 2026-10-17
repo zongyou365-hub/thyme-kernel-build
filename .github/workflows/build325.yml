@@ -173,6 +173,11 @@ jobs:
             $SC -e "$opt" 2>/dev/null || true
           done
           # --- KernelSU ---
+          # ROOT CAUSE: kernelsu/Kconfig has `config KSU  depends on KPROBES && EXT4_FS`.
+          # thyme_defconfig uses F2FS and leaves both off -> CONFIG_KSU is invisible to Kconfig,
+          # so olddefconfig silently drops it even after scripts/config -e KSU.
+          $SC -e KPROBES
+          $SC -e EXT4_FS
           $SC -d KSU_MODULE 2>/dev/null || true
           $SC -e KSU
           echo "=== after scripts/config -e KSU ==="
