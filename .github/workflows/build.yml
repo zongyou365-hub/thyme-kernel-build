@@ -174,6 +174,21 @@ jobs:
             sed -i 's/\bTWA_RESUME\b/true/g' "$f"
             echo "  TWA_RESUME->true: $f"
           done
+          # --- explicit include fixes for files that rely on transitive includes ---
+          # supercall/dispatch.c: tasklist_lock+init_task = linux/sched/task.h,
+          #                       task_pgrp/task_session   = linux/sched/signal.h
+          if ! grep -q "linux/sched/signal.h" drivers/kernelsu/supercall/dispatch.c; then
+            sed -i 's|#include <linux/thread_info.h>|#include <linux/thread_info.h>\n#include <linux/sched/task.h>\n#include <linux/sched/signal.h>|' drivers/kernelsu/supercall/dispatch.c
+            echo ">> include added: sched/{task,signal}.h -> supercall/dispatch.c"
+          fi
+          # feature/adb_root.c: ALIGN_DOWN lives in linux/kernel.h (4.19)
+          if ! grep -q "linux/kernel.h" drivers/kernelsu/feature/adb_root.c; then
+            sed -i 's|#include <linux/static_key.h>|#include <linux/kernel.h>\n#include <linux/static_key.h>|' drivers/kernelsu/feature/adb_root.c
+            echo ">> include added: linux/kernel.h -> feature/adb_root.c"
+          fi
+          echo "=== include fix verify (expect 1 / 1) ==="
+          grep -c "linux/sched/signal.h" drivers/kernelsu/supercall/dispatch.c || true
+          grep -c "linux/kernel.h" drivers/kernelsu/feature/adb_root.c || true
           echo "=== after replace ==="
           grep -rn "nofault" drivers/kernelsu/ || echo "(no more references)"
           echo "=== proactive scan: known 5.8+ APIs ==="
