@@ -89,18 +89,28 @@ jobs:
           echo "=== scan other suspicious 2-arg strnstr ==="
           grep -rn "strnstr(" drivers/gpu techpack 2>/dev/null | grep -vE "strnstr\([^,]+, *[^,]+, *[^)]+\)" | head -10 || true
 
-      - name: Integrate SukiSU
+      - name: Integrate SukiSU (manual clone, no setup.sh)
         run: |
           cd kernel
           BR="${{ inputs.ksu_branch }}"
           [ -z "$BR" ] && BR="builtin"
-          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BR"
-          echo "=== drivers/kernelsu ==="
-          ls drivers/kernelsu/ | head -30
+          rm -rf KernelSU drivers/kernelsu
+          git clone --depth=1 -b "$BR" https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
+          echo "=== repo state ==="
+          git -C KernelSU log -1 --format="%H %cd %s"
+          git -C KernelSU rev-parse --abbrev-ref HEAD
+          echo "=== KernelSU/kernel/ ==="
+          ls KernelSU/kernel/ | head -30
+          ln -sfn ../KernelSU/kernel drivers/kernelsu
+          ls -la drivers/kernelsu | head -3
           echo "=== Kconfig items ==="
           grep -E "^config " drivers/kernelsu/Kconfig | awk '{print $2}' | tr '\n' ' '; echo
-          echo "=== KPM source files ==="
-          find drivers/kernelsu -iname "*kpm*" | head -10
+          echo "=== wire into Kbuild ==="
+          grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
+          grep -q 'drivers/kernelsu/Kconfig' drivers/Kconfig || sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          grep -n "kernelsu" drivers/Kconfig drivers/Makefile | head -4
+          echo "=== KPM sources ==="
+          ls KernelSU/kernel/kpm/ 2>/dev/null | head -10 || echo "(no kpm dir)"
           echo "=== Makefile CFLAGS health check ==="
           if grep -qE "^(CFLAGS|AFLAGS)[[:space:]]*[:+]?=" drivers/kernelsu/Makefile; then
             sed -i 's/^CFLAGS[[:space:]]*:=/ccflags-y :=/; s/^CFLAGS[[:space:]]*+=/ccflags-y +=/; s/^AFLAGS[[:space:]]*:=/asflags-y :=/; s/^AFLAGS[[:space:]]*+=/asflags-y +=/' drivers/kernelsu/Makefile
@@ -108,8 +118,6 @@ jobs:
           else
             echo "Makefile clean"
           fi
-          echo "=== Kbuild wiring ==="
-          grep -n "kernelsu" drivers/Kconfig drivers/Makefile 2>/dev/null | head -6
 
       - name: Configure
         id: cfg
