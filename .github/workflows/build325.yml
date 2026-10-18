@@ -856,7 +856,8 @@ jobs:
           # enabling drivers/gpu/drm/msm causes duplicate symbols (msm_dss_*, msm_framebuffer_*, ...).
           for opt in DEVTMPFS DEVTMPFS_MOUNT REGULATOR_QCOM_SPMI QCOM_TSENS \
                      ANDROID_VENDOR_HOOKS TRACEPOINTS KALLSYMS KALLSYMS_ALL \
-                     IKCONFIG IKCONFIG_PROC PSTORE PSTORE_CONSOLE PSTORE_PMSG PSTORE_RAM; do
+                     IKCONFIG IKCONFIG_PROC PSTORE PSTORE_CONSOLE PSTORE_PMSG PSTORE_RAM \
+                     CMDLINE_EXTEND FS_ENCRYPTION DM_BOW; do
             $SC -e "$opt" 2>/dev/null || true
           done
           # --- KernelSU ---
@@ -944,6 +945,7 @@ jobs:
           name: thyme-325-Image
           path: |
             kernel/out/arch/arm64/boot/Image
+            kernel/out/.config
             kernel/build_Image.log
           if-no-files-found: error
 
