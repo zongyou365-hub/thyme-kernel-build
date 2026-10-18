@@ -1,6 +1,10 @@
 name: Build thyme 4.19.325 (SukiSU+KPM)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build325.yml'
   workflow_dispatch:
     inputs:
       ksu_branch:
@@ -24,6 +28,8 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
+    permissions:
+      contents: write
 
     steps:
       - name: Maximize build space
@@ -104,7 +110,7 @@ jobs:
         if: ${{ inputs.with_ksu != 'false' }}
         run: |
           cd kernel
-          BR="${{ inputs.ksu_branch }}"
+          BR="${{ inputs.ksu_branch || 'susfs_new' }}"
           [ -z "$BR" ] && BR="susfs_new"
           rm -rf KernelSU drivers/kernelsu
           git clone --depth=1 -b "$BR" https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
@@ -840,7 +846,7 @@ jobs:
           grep -E "CONFIG_(MACH_XIAOMI_THYME|QCA_CLD_WLAN|BUILD_ARM64_DT_OVERLAY|CMDLINE|TOUCHSCREEN_ST_FTS_V521)=" out/.config || echo "  !! fragment keys MISSING"
           SC="./scripts/config --file out/.config"
           # --- align with installed vendor modules ---
-          $SC --set-str LOCALVERSION "${{ inputs.localversion }}"
+          $SC --set-str LOCALVERSION "${{ inputs.localversion || '-HyperOS3-A16-Sky-Developers' }}"
           $SC -d LOCALVERSION_AUTO
           $SC -d MODULE_SIG_FORCE
           $SC -e MODULE_SIG
@@ -906,7 +912,7 @@ jobs:
           export KBUILD_BUILD_USER=builder
           export KBUILD_BUILD_HOST=builder
           clang --version | head -2
-          TGT="${{ inputs.target }}"
+          TGT="${{ inputs.target || 'Image' }}"
           [ -z "$TGT" ] && TGT="Image"
           set -o pipefail
           make O=out ARCH=arm64 CC=clang LD=ld.lld CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -948,3 +954,14 @@ jobs:
           name: build-log-failure
           path: kernel/build_*.log
           if-no-files-found: ignore
+
+      - name: Publish kernel to release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Kernel build ${{ github.run_number }}
+          files: |
+            kernel/out/arch/arm64/boot/Image
+            kernel/build_Image.log
+          token: ${{ secrets.GITHUB_TOKEN }}
