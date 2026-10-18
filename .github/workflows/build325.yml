@@ -857,7 +857,9 @@ jobs:
           for opt in DEVTMPFS DEVTMPFS_MOUNT REGULATOR_QCOM_SPMI QCOM_TSENS \
                      ANDROID_VENDOR_HOOKS TRACEPOINTS KALLSYMS KALLSYMS_ALL \
                      IKCONFIG IKCONFIG_PROC PSTORE PSTORE_CONSOLE PSTORE_PMSG PSTORE_RAM \
-                     CMDLINE_EXTEND FS_ENCRYPTION DM_BOW; do
+                     CMDLINE_EXTEND FS_ENCRYPTION DM_BOW \
+                     F2FS_FS_COMPRESSION CFS_BANDWIDTH DM_VERITY_AVB DM_ANDROID_VERITY \
+                     CRYPTO_LZO CRYPTO_842 CRYPTO_LZ4HC XDP_SOCKETS; do
             $SC -e "$opt" 2>/dev/null || true
           done
           # --- KernelSU ---
