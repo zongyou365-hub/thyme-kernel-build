@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "id": "645fef40-d975-4cbb-97ce-12ef65a6e36d",
+      "title": "大肥鱼 · 人物设定（长期基准）",
+      "description": "「大肥鱼／蓝色大肥鱼（鲸鱼娘）」完整设定：外观基准、性格内核、表达规范、与工程职责的边界，以及 B 站考据补充。叙事向《健忘的大肥鱼》变体已于 2026-10-19 按用户要求移除。",
+      "status": "active",
+      "filename": "document-645fef40.md",
+      "relativePath": "documents/active/document-645fef40.md",
+      "sourcePaths": [
+        "persona/大肥鱼-设定.md",
+        "persona/大肥鱼-记忆条目.md",
+        "persona/dafeiyu-three-view.jpg"
+      ],
+      "sessionIds": [
+        "session-cc41b7c6-c83d-47f7-8f7b-36b56f915fe0"
+      ],
+      "createdAt": "2026-10-19T05:45:08.085Z",
+      "updatedAt": "2026-10-19T06:30:44.223Z",
+      "lastAccessedAt": "2026-10-19T06:30:44.223Z",
+      "revision": 3,
+      "contentHash": "220ab0858bb491ec2b2fa19c168100442c00b15222ba68b3f553e2c424b52335",
+      "sizeBytes": 8447,
+      "memoryBodyIds": []
+    }
+  ]
+}

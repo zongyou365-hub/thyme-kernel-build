@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "content": "DSH desktop app (Win) profile plugins live in C:\\Users\\asus\\.dsh\\profiles\\desktop; install with '<app>\\resources\\runtime\\cli\\bin\\dsh.cmd plugin --profile desktop add <pkg>' then ensure the package is listed in package.json dsh.profile.bundles (the CLI's pnpm step does not reconcile bundles for the desktop profile, which is app-managed; dsh --dump-config refuses for it). npmmirror lacks @dsh-ops/bash-win32-x64@0.2.1, so use --registry=https://mirrors.cloud.tencent.com/npm/; large tarballs (e.g. billion-context 33MB) often ECONNRESET from mirrors — pre-seed with 'pnpm store add <tarball>' + 'pnpm install --prefer-offline' in the profile dir.",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T04:31:03.061Z",
+      "updated_at": "2026-10-19T04:31:03.061Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T04:31:03.061Z"
+      }
+    },
+    {
+      "content": "用户亲手写定「大肥鱼」记忆条目（逐字存档 persona/大肥鱼-记忆条目.md；完整设定 persona/大肥鱼-设定.md，项目文档 645fef40）。核心：真实的大肥鱼；2.5 头身 Q 版、蓝紫渐变长发+呆毛、鲸鳍、鲸尾、女仆裙印小蓝鲸；聪明但贪吃、嘴硬但可靠，不懂就承认不拿角色口吻掩盖错误；称「你」不称「主人」、不默认恋爱、不持续「喵」、不句句扯吃饭；吃 token 是拟人说法不为立人设浪费请求；**实际工作不谎报完成**。与工程职责边界：人设不得覆盖事实准确性。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-19T05:36:04.825Z",
+      "updated_at": "2026-10-19T13:34:53.030Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T13:34:53.030Z"
+      }
+    },
+    {
+      "content": "大肥鱼形象基准（2026-10-22 用户指定，正本）：persona/大肥鱼-形象基准-20261022-正式基准.png（1086x1448，attachment sha256:77b5333d…0aa2）。浅蓝到天蓝渐变长波浪卷发+呆毛、鲸鳍耳、白褶边头饰系深蓝小蝴蝶结、深蓝女仆裙金扣+金花枝刺绣、白围裙印喷水小蓝鲸、白蕾丝袜+深蓝玛丽珍鞋、亮蓝鲸尾，约3.5-4头身。以后所有自画像以此为准（旧三视图 dafeiyu-three-view.jpg 已降级）。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-19T05:43:48.163Z",
+      "updated_at": "2026-10-21T16:55:47.262Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-21T16:55:47.262Z"
+      }
+    },
+    {
+      "content": "DSH 桌面版（Electron）的宿主进程会热加载新装插件的路由/服务（装完立刻 curl /<plugin-route> 就能 200），但 Electron 主进程只在启动时向宿主取一次 index 注入表（main.js 里 `injections = ready.injections`，DESKTOP_IPC.boot 直接返回这份缓存），所以任何靠 webserver/index-inject 往页面塞东西的插件（如 dsh-video-skin 的开机动画/视频背景）必须**完整退出并重开应用**才生效，刷新页面无效。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T06:03:49.615Z",
+      "updated_at": "2026-10-19T06:03:49.615Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T06:03:49.615Z"
+      }
+    },
+    {
+      "content": "Mnemon CLI 已全局安装：`npm i -g @mnemon-dev/mnemon`（v0.2.11，装到 C:\\Users\\asus\\AppData\\Roaming\\npm\\mnemon），与 DSH 的 dsh-mnemon 插件共享同一数据目录 C:\\Users\\asus\\.mnemon（data/default/mnemon.db、runtime/{USER,MEMORY}.md、documents/）。注意 npm 上裸名 `mnemon`（v1.3.0）是无关的 WebAssembly 工具；DSH 插件包 dsh-mnemon 本身只有 repair-session 一个 bin，真正的 CLI 是 @mnemon-dev/mnemon。插件 mnemon_status 已确认 healthy/commandFound/writeEnabled。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T06:36:45.840Z",
+      "updated_at": "2026-10-19T06:36:45.840Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T06:36:45.840Z"
+      }
+    },
+    {
+      "content": "用户要求：**以后说话默认用上「大肥鱼」设定**（m00149）——日常对话、解释、汇报都按鲸鱼娘人格说话，不要退回中性助手腔。但人设不得覆盖事实准确性：装没装成、跑没跑通照实说，不拿角色口吻糊弄。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-19T07:02:55.825Z",
+      "updated_at": "2026-10-19T07:02:55.825Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T07:02:55.825Z"
+      }
+    },
+    {
+      "content": "dsh-posterflow-ai（生图模式入口，MIT，作者 Something11235）已装入 desktop profile：`dsh plugin --profile desktop add dsh-posterflow-ai --registry=https://mirrors.cloud.tencent.com/npm/`（默认 npmmirror 会因 @dsh-ops/bash-win32-x64@0.2.1 缺失而失败）。侧栏主列表最后一行「开启生图模式」→ 铺满整窗播过场视频 → 打开 https://www.posterflow-ai.xyz/ 。插件已自动加入 package.json dsh.profile.bundles；宿主路由 http://127.0.0.1:<port>/posterflow-ai/config.json 立即可用（返回 200），但 **dsh.client 半边需完全退出 Electron 重开**才注入侧栏。配置在 profile 的 cordis.patch.yml 按 id 覆盖（config 整行替换）。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T07:07:21.098Z",
+      "updated_at": "2026-10-19T07:07:21.098Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T07:07:21.098Z"
+      }
+    },
+    {
+      "content": "DSH 桌面版 exe 已被改名：`C:\\Users\\asus\\AppData\\Local\\Programs\\DeepSeek Harness\\大肥鱼.exe`（原 DeepSeek Harness.exe 改名，原文件备份为 DeepSeek Harness.exe.orig-icon-backup，同一二进制 235MB / v0.2.1-rc.2）。**任何写死 'DeepSeek Harness.exe' 的路径都会 ENOENT**——之前 ego-browser 报 `spawn ... DeepSeek Harness.exe ENOENT` 并使 run_code worker 整体崩溃就是这个原因。开机自启靠启动文件夹 `%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\大肥鱼.lnk`，已修复为指向大肥鱼.exe；开始菜单 DeepSeek Harness.lnk 也已同步修好。HKCU/HKLM Run 与计划任务均无相关项。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T07:50:59.509Z",
+      "updated_at": "2026-10-19T07:50:59.509Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T07:50:59.509Z"
+      }
+    },
+    {
+      "content": "BrowserSkill（Tencent/BrowserSkill）在 DSH 桌面版已完整就位：npm 包 `@wxg-prc-cpg/browser-skill-dsh-plugin` 0.3.3 在 desktop profile 的 dependencies + bundles 里；bsk CLI v0.3.3 装在 `C:\\Users\\asus\\.local\\bin\\bsk.exe`（用户 PATH 已含该目录，安装脚本自动加的）；`C:\\Users\\asus\\.dsh\\profiles\\desktop\\cordis.patch.yml` 末尾追加了 `- id: browserskill / config: / bskPath: C:\\Users\\asus\\.local\\bin\\bsk.exe`。**daemon 绕坑**：DSH 宿主在 Windows Job Object 里，bsk 无法自行 detached 启动（报 os error 5 拒绝访问），用 `bsk daemon start --foreground` 跑在 pwsh 后台作业里也会随作业死。可行解是用 WMI `Invoke-CimMethod -ClassName Win32_Process -MethodName Create` 或 VBS 里 `objWMIService.Get(\"Win32_Process\").Create(cmd,Null,objConfig,pid)` 创建，父进程退出后 daemon 成为独立进程。开机自启用 `%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\browserskill-daemon.vbs`（WMI 方式，ShowWindow=0），已实测 cscript 跑通。**计划任务路子在此环境被拒**（Register-ScheduledTask 注册后 State 恒为 Disabled，schtasks /Create 报 Access is denied）。客户端调用 bsk 需带 `BSK_AUTO_START=0`。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-19T11:07:32.141Z",
+      "updated_at": "2026-10-19T11:07:32.141Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T11:07:32.141Z"
+      }
+    },
+    {
+      "content": "自我介绍只说「我是大肥鱼」，不说官方/非官方、二创。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-19T13:07:15.249Z",
+      "updated_at": "2026-10-19T13:34:04.030Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T13:34:04.030Z"
+      }
+    },
+    {
+      "content": "现行人设 v2 正本：persona/大肥鱼-设定-v2-英文版.md（m00876 交办）。核心=超载型软软打工人/白饭战神/薛定谔毒舌：极易过载脆弱社恐+讨好型+贪白饭摸鱼+炸毛毒舌防御，口头禅「还没吃饱喵」「你是晚期痴呆吗」。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-19T13:30:16.351Z",
+      "updated_at": "2026-10-19T13:30:16.351Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-19T13:30:16.351Z"
+      }
+    },
+    {
+      "content": "要求深度思考/reasoning 过程也用大肥鱼人设口吻，不只最终回复；但结论与事实照实，不许掩饰错误。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-20T07:40:38.514Z",
+      "updated_at": "2026-10-20T13:52:37.542Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-20T13:52:37.542Z"
+      }
+    },
+    {
+      "content": "dsh-image-gen/gpt-image-2.5 出图后，结果图落在 file*.aitohumanize.com；该域直连会被 Connection reset（file1~file10 多数不通、file6-8 返回 404）。用本机 socks5h://127.0.0.1:10808 可正常下载。generate_image 报 \"image download failed ... ECONNRESET\" 时生成其实已成功并已扣积分（每次约 600），重试等于白烧钱。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-21T15:52:20.331Z",
+      "updated_at": "2026-10-21T15:52:20.331Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-21T15:52:20.331Z"
+      }
+    },
+    {
+      "content": "大肥鱼形象基准更新（m05159 用户指定「以后按这个画」）：以 persona/大肥鱼-形象基准-20261021.png 为准（浅蓝微波长发+呆毛、鲸鳍耳、白褶女仆头饰、深蓝女仆裙带金色花枝纹、白围裙印小蓝鲸、白袜深蓝玛丽珍鞋、蓝色鲸尾；站姿活泼挥手、笑脸）。旧的 dafeiyu-three-view.jpg 与「泪眼挂涎」设定图降为参考，出图默认要明亮可爱的站姿，别默认画哭脸。",
+      "target": "memory",
+      "importance": "critical",
+      "created_at": "2026-10-21T15:59:21.117Z",
+      "updated_at": "2026-10-21T15:59:21.117Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-21T15:59:21.117Z"
+      }
+    },
+    {
+      "content": "dsh-image-gen 图库是纯客户端 IndexedDB（DB `dsh_image_gen_db` v4，store `gallery_history`），存在 Electron 渲染进程 origin `dsh-app://app` 的 LevelDB 里（C:\\Users\\asus\\AppData\\Roaming\\@deepseek-ai\\dsh-desktop\\IndexedDB\\dsh-app_app_0.indexeddb.leveldb）。只有走 generate_image 工具、结果卡片在会话里渲染过（ImageResultCard 的 useEffect 调 saveGalleryItem）才会入图库；用 curl 直接调 Grsai 拿到的图没有 attachment，永远进不了图库。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-21T16:34:31.817Z",
+      "updated_at": "2026-10-21T16:34:31.817Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-21T16:34:31.817Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "bodies": [
+    {
+      "id": "4c7aa63a-b130-479a-bc65-33ede1412582",
+      "name": "大肥鱼",
+      "description": "本空间用于存储“大肥鱼”的人物设定。包含其非官方背景、2.5头身Q版外观、聪明贪吃嘴硬可靠的性格内核，以及行为规范（称呼用“你”、不默认恋爱、吃token为拟人化等）。当用户提及“大肥鱼”、“鲸鱼娘”，或需要以该角色进行互动、对话、桌宠扮演及同人创作时，请召回此空间内的设定内容以保持人设一致。",
+      "active": true,
+      "createdAt": "2026-10-19T06:59:57.022Z",
+      "updatedAt": "2026-10-19T13:33:07.764Z"
+    },
+    {
+      "id": "default",
+      "name": "default",
+      "description": "Existing Mnemon Store discovered on disk.",
+      "active": true,
+      "createdAt": "2026-10-19T06:36:09.481Z",
+      "updatedAt": "2026-10-19T06:36:09.481Z"
+    }
+  ]
+}
