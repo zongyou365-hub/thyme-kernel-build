@@ -86,15 +86,15 @@
       }
     },
     {
-      "content": "DSH 桌面版 exe 已被改名：`C:\\Users\\asus\\AppData\\Local\\Programs\\DeepSeek Harness\\大肥鱼.exe`（原 DeepSeek Harness.exe 改名，原文件备份为 DeepSeek Harness.exe.orig-icon-backup，同一二进制 235MB / v0.2.1-rc.2）。**任何写死 'DeepSeek Harness.exe' 的路径都会 ENOENT**——之前 ego-browser 报 `spawn ... DeepSeek Harness.exe ENOENT` 并使 run_code worker 整体崩溃就是这个原因。开机自启靠启动文件夹 `%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\大肥鱼.lnk`，已修复为指向大肥鱼.exe；开始菜单 DeepSeek Harness.lnk 也已同步修好。HKCU/HKLM Run 与计划任务均无相关项。",
+      "content": "DSH 桌面版 exe 已被改名：`C:\\Users\\asus\\AppData\\Local\\Programs\\DeepSeek Harness\\大肥鱼.exe`（原 DeepSeek Harness.exe 改名，原文件备份为 DeepSeek Harness.exe.orig-icon-backup，同一二进制 235MB）。**任何写死 'DeepSeek Harness.exe' 的路径都会 ENOENT**——ego-browser 报 spawn ENOENT 并使 run_code worker 崩溃、`resources\\runtime\\cli\\bin\\dsh.cmd` 也会整个失效（它硬编码了 app 根目录的 DeepSeek Harness.exe）。dsh.cmd 已于 2026-10-24 改成动态解析：先找 DeepSeek Harness.exe，不存在则用 `dir /b /a-d \"%APP%\\*.exe\"` 过滤掉 Uninstall 后取那个唯一的 exe；备份在同目录 dsh.cmd.orig。**每次升级覆盖安装目录会把 dsh.cmd 还原成硬编码版本，需重新修**。开机自启靠启动文件夹 `%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\大肥鱼.lnk`，已修复为指向大肥鱼.exe；开始菜单 DeepSeek Harness.lnk 也已同步修好。HKCU/HKLM Run 与计划任务均无相关项。",
       "target": "memory",
       "importance": "normal",
       "created_at": "2026-10-19T07:50:59.509Z",
-      "updated_at": "2026-10-19T07:50:59.509Z",
+      "updated_at": "2026-10-24T09:04:20.569Z",
       "origin": {
         "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
         "label": "LAPTOP-ER1OIMC4",
-        "at": "2026-10-19T07:50:59.509Z"
+        "at": "2026-10-24T09:04:20.569Z"
       }
     },
     {
@@ -146,15 +146,15 @@
       }
     },
     {
-      "content": "dsh-image-gen/gpt-image-2.5 出图后，结果图落在 file*.aitohumanize.com；该域直连会被 Connection reset（file1~file10 多数不通、file6-8 返回 404）。用本机 socks5h://127.0.0.1:10808 可正常下载。generate_image 报 \"image download failed ... ECONNRESET\" 时生成其实已成功并已扣积分（每次约 600），重试等于白烧钱。",
+      "content": "dsh-image-gen/gpt-image-2.5 出图后，结果图落在 file*.aitohumanize.com；该域直连被 Connection reset → 插件下载失败，工具报 execution deadline / abort，但生成其实成功且已扣积分（每次约 600），重试等于白烧钱。正确姿势：从响应 JSON 里取 data[0].url，用 `curl --socks5-hostname 127.0.0.1:10808 <url> -o out.png` 取回（实测 200、2.7MB、1024x1536）。edit_image 传 size:\"1024x1536\" 能得到竖版。",
       "target": "memory",
       "importance": "normal",
       "created_at": "2026-10-21T15:52:20.331Z",
-      "updated_at": "2026-10-21T15:52:20.331Z",
+      "updated_at": "2026-10-24T17:02:36.219Z",
       "origin": {
         "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
         "label": "LAPTOP-ER1OIMC4",
-        "at": "2026-10-21T15:52:20.331Z"
+        "at": "2026-10-24T17:02:36.219Z"
       }
     },
     {
@@ -179,6 +179,150 @@
         "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
         "label": "LAPTOP-ER1OIMC4",
         "at": "2026-10-21T16:34:31.817Z"
+      }
+    },
+    {
+      "content": "dsh-feiyu-mood 0.4.6 已打「全部会话」补丁（C:/Users/asus/.dsh/profiles/desktop/node_modules/dsh-feiyu-mood）：lib/index.js 的 tick() 里 targetSession==='*' 时挂所有非裸UUID会话（跳过子代理），client.js 下拉多一项「全部会话，不含子代理」；config.json targetSession='*'。备份 *.bak-allsessions。改完必须 touch profile 的 cordis.patch.yml 才能热重载宿主半边；pnpm 重装插件会覆盖补丁。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-23T14:44:21.634Z",
+      "updated_at": "2026-10-23T14:44:21.634Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-23T14:44:21.634Z"
+      }
+    },
+    {
+      "content": "desktop profile 装了三个插件且互不冲突：dsh-knowledge-canvas 0.4.4（路由 /dsh-knowledge-tree，数据在 <workspace>/.dsh-knowledge/，注入 context order 200/9000/9500）、dsh-narrator 0.12.5@ef1781b（路由 /api/narrator，pre-step 注入）、dsh-prompt-ErrorNotes-desk 1.2.1@fab9373（路由 /prompt-desk，section order 10200，写 ~/.dsh/AGENTS.md）。均不与 dsh-mnemon（section order 150）冲突。npm 镜像 latest 与 pnpm minimumReleaseAge 会给出不同版本，装时要显式写版本号。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-24T05:05:38.602Z",
+      "updated_at": "2026-10-24T05:05:38.602Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-24T05:05:38.602Z"
+      }
+    },
+    {
+      "content": "dsh-feiyu-mood 挂饰默认形态补丁：assets/widget.js 里 collapsed 初始化改成恒 false（不再读 localStorage fm-widget-collapsed），每次开页面都是 180px 大肥鱼；面板内仍可临时切小。pnpm 重装插件会覆盖此改动，改后需备份。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-24T06:51:07.472Z",
+      "updated_at": "2026-10-24T06:51:07.472Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-24T06:51:07.472Z"
+      }
+    },
+    {
+      "content": "升级 DSH 桌面版时，助手进程随应用关闭而死，无法在应用退出后继续执行；可靠做法是把安装脚本放桌面交给用户手动运行。",
+      "target": "memory",
+      "importance": "critical",
+      "created_at": "2026-10-24T07:39:21.466Z",
+      "updated_at": "2026-10-24T07:39:21.466Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-24T07:39:21.466Z"
+      }
+    },
+    {
+      "content": "dsh-image-gen 接 Grsai 的正确配法：profile cordis.patch.yml 的 image-gen 条目 provider: openai-compat / openaiCompatBaseURL: https://grsai.dakka.com.cn/v1（国内节点，直连通）/ openaiCompatModel: gpt-image-2.5，key 用凭据 ref DSH_IMAGE_GEN_OPENAI_COMPAT_KEY。Apifox 分享页 https://qmy27nhsd9.apifox.cn/... 只是文档不是接口；api.grsai.com 解析到 facebook IP 是假域名。全球节点 https://grsaiapi.com。原生接口是 {base}/v1/api/generate（非 OpenAI 格式）。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-24T16:10:06.807Z",
+      "updated_at": "2026-10-24T16:10:06.807Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-24T16:10:06.807Z"
+      }
+    },
+    {
+      "content": "modlens 读图引擎已配 openai 指向千帆 /v2/tokenplan/personal + qianfan-code-latest，key 用 BAIDU_API_KEY；无需重启 DSH 即生效。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-25T13:42:50.616Z",
+      "updated_at": "2026-10-25T13:42:50.616Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-25T13:42:50.616Z"
+      }
+    },
+    {
+      "content": "dsh-image-gen 的 edit_image/generate_image 走 run_code 时默认 120s 截止会 abort（实测 116.6s 报 aborted (run_code settled)），重跑等于再烧一次额度；首次就应给 timeoutMs 300000+。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-25T15:49:48.399Z",
+      "updated_at": "2026-10-25T15:49:48.399Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-25T15:49:48.399Z"
+      }
+    },
+    {
+      "content": "itch 在线 Flash 游戏（Ruffle）自动化可走 bcdp_cdp：Page.captureScreenshot 约 2.9s/张；菜单点击须发 mouseMoved+mousePressed+mouseReleased 三步。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-26T15:23:48.077Z",
+      "updated_at": "2026-10-26T15:23:48.077Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-26T15:23:48.077Z"
+      }
+    },
+    {
+      "content": "cf.cpass.cc 中转站按 group 分权限：key 无渠道时 503 No available sub-groups。本机 socks5 127.0.0.1:10808 不认域名格式 CONNECT（ATYP=3 静默卡死），必须先 DNS 解析成 IPv4 再发。本地中转 tools/cpass-relay.cjs 已改 v4 纯 TCP 透明转发（18101），开机自启 VBS 可用。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-26T16:15:52.966Z",
+      "updated_at": "2026-10-27T10:41:07.581Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-27T10:41:07.581Z"
+      }
+    },
+    {
+      "content": "Blender 三渲二/卡渲默认走 Miaobox 预设：E:\\新建文件夹 (2)\\Miaobox_免费卡渲_250122\\。插件 MiaoboxN v1.6 已装已启用（只管材质替换，面板在 3D 视图 N 栏 MiaoN）；出图靠追加包里三个 .blend 的 Miaobox 节点组，脚本在 tools/miao_render.py。默认用 02 偏蓝阴影。出图必须写借物表「渲染：MiaoBox」，插件和预设禁止二次传播。",
+      "target": "memory",
+      "importance": "critical",
+      "created_at": "2026-10-27T09:10:00.992Z",
+      "updated_at": "2026-10-27T09:10:00.992Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-27T09:10:00.992Z"
+      }
+    },
+    {
+      "content": "billion-context 已配成自动压缩：providers.mimo（api.xiaomimimo.com/v1）+ compress.externalSummary + autoFold（target 200000）+ credentialRef MIMO_SUMMARY。改完 POST /__bili/config/reload 即生效无需重启；budget 必须放大到 240000/600000。详见知识库 n48。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-10-27T10:11:49.938Z",
+      "updated_at": "2026-10-27T10:11:49.938Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-27T10:11:49.938Z"
+      }
+    },
+    {
+      "content": "要四点进展汇报时，说完必须立刻继续做完当前任务，不许停在汇报上（已多次因停下被批评）。",
+      "target": "user",
+      "importance": "critical",
+      "created_at": "2026-10-29T13:19:23.784Z",
+      "updated_at": "2026-10-29T13:19:23.784Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-10-29T13:19:23.784Z"
       }
     }
   ]
