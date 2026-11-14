@@ -2,7 +2,7 @@
   "format": "mnemonpack",
   "version": 1,
   "scope": "full",
-  "exportedAt": "2026-11-14T05:01:07.463Z",
+  "exportedAt": "2026-11-14T11:49:54.857Z",
   "source": {
     "plugin": "dsh-mnemon",
     "pluginVersion": "0.5.45"
@@ -16,7 +16,7 @@
     {
       "component": "runtime",
       "files": 3,
-      "bytes": 33980,
+      "bytes": 34030,
       "items": 28
     },
     {
@@ -36,7 +36,7 @@
     "channel": "git",
     "branch": "mnemon-sync",
     "subdir": "mnemon/",
-    "pushedAt": "2026-11-14T05:01:07.463Z",
+    "pushedAt": "2026-11-14T11:49:54.857Z",
     "machine": {
       "id": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
       "label": "LAPTOP-ER1OIMC4",
@@ -53,6 +53,12 @@
         "target": "memory",
         "contentHash": "2fcc6513ebc15428c81cd4d70e904e7b8ccbce6dffb40bf565b7c8fde05d7c39",
         "deletedAt": "2026-10-29T16:11:58.515Z",
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0"
+      },
+      {
+        "target": "memory",
+        "contentHash": "efd0bc19b307f0daa375c6fe8e3292c7a2a0b2b643885d0d0ff8d05544226162",
+        "deletedAt": "2026-11-14T11:49:52.247Z",
         "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0"
       }
     ]
