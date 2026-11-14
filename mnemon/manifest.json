@@ -2,10 +2,10 @@
   "format": "mnemonpack",
   "version": 1,
   "scope": "full",
-  "exportedAt": "2026-11-13T15:28:56.995Z",
+  "exportedAt": "2026-11-14T05:01:07.463Z",
   "source": {
     "plugin": "dsh-mnemon",
-    "pluginVersion": "0.5.44"
+    "pluginVersion": "0.5.45"
   },
   "components": [
     "runtime",
@@ -16,8 +16,8 @@
     {
       "component": "runtime",
       "files": 3,
-      "bytes": 32632,
-      "items": 27
+      "bytes": 33980,
+      "items": 28
     },
     {
       "component": "documents",
@@ -36,7 +36,7 @@
     "channel": "git",
     "branch": "mnemon-sync",
     "subdir": "mnemon/",
-    "pushedAt": "2026-11-13T15:28:56.995Z",
+    "pushedAt": "2026-11-14T05:01:07.463Z",
     "machine": {
       "id": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
       "label": "LAPTOP-ER1OIMC4",

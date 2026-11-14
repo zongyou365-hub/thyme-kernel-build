@@ -37,3 +37,5 @@ cf.cpass.cc 中转站按 group 分权限：key 无渠道时 503 No available sub
 Blender 三渲二/卡渲默认走 Miaobox 预设：E:\新建文件夹 (2)\Miaobox_免费卡渲_250122\。插件 MiaoboxN v1.6 已装已启用（只管材质替换，面板在 3D 视图 N 栏 MiaoN）；出图靠追加包里三个 .blend 的 Miaobox 节点组，脚本在 tools/miao_render.py。默认用 02 偏蓝阴影。出图必须写借物表「渲染：MiaoBox」，插件和预设禁止二次传播。
 §
 billion-context 已配成自动压缩：providers.mimo（api.xiaomimimo.com/v1）+ compress.externalSummary + autoFold（target 200000）+ credentialRef MIMO_SUMMARY。改完 POST /__bili/config/reload 即生效无需重启；budget 必须放大到 240000/600000。详见知识库 n48。
+§
+billion-context 摘要链（api.deepseek.com）真实可用模型只有 deepseek-flash 与 deepseek-v4-pro（实测 200）；写成 deepseek-v4.1flash 会在 config reload 时通过、调用时 400。若把不存在的模型名补进 providers.deepseek.models 声明，链的门控就不再禁用整条链，但每次摘要都失败——比直接报错更难查。deepseek-flash 小探针 200 不代表可用：真实摘要负载会返回 402 Insufficient Balance，必须用 ~10KB 级负载验。

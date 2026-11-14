@@ -324,6 +324,18 @@
         "label": "LAPTOP-ER1OIMC4",
         "at": "2026-10-29T13:19:23.784Z"
       }
+    },
+    {
+      "content": "billion-context 摘要链（api.deepseek.com）真实可用模型只有 deepseek-flash 与 deepseek-v4-pro（实测 200）；写成 deepseek-v4.1flash 会在 config reload 时通过、调用时 400。若把不存在的模型名补进 providers.deepseek.models 声明，链的门控就不再禁用整条链，但每次摘要都失败——比直接报错更难查。deepseek-flash 小探针 200 不代表可用：真实摘要负载会返回 402 Insufficient Balance，必须用 ~10KB 级负载验。",
+      "target": "memory",
+      "importance": "normal",
+      "created_at": "2026-11-14T04:51:04.970Z",
+      "updated_at": "2026-11-14T04:51:04.970Z",
+      "origin": {
+        "machine": "5a407cb1-56a1-4b7a-bdcc-454d883afac0",
+        "label": "LAPTOP-ER1OIMC4",
+        "at": "2026-11-14T04:51:04.970Z"
+      }
     }
   ]
 }
